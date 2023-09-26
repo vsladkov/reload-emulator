@@ -2,3 +2,4 @@ disks/**/*.h
 roms/**/*.h
 **/.DS_Store
 **/.vscode
+**/build
