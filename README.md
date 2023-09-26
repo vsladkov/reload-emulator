@@ -14,7 +14,7 @@ Reload - Portable Retro Computers Emulator
 ## Quickstart 
 
 ```bash
-# Checkout tinyusb & pico-sdk as git submodules
+# Checkout pico-sdk & PicoDVI & tinyusb as git submodules
 cd platforms/pico-6502/lib
 git submodule update --init -- pico-sdk PicoDVI tinyusb
 
