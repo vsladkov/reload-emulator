@@ -214,9 +214,9 @@ bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *
 }
 
 bool __not_in_flash_func(repeating_timer_1khz_callback)(struct repeating_timer *t) {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    unsigned long start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+    // struct timeval tv;
+    // gettimeofday(&tv, NULL);
+    // unsigned long start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
 
     uint32_t num_ticks = clk_us_to_ticks(ORIC_FREQUENCY, 1000);
     for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
@@ -224,10 +224,10 @@ bool __not_in_flash_func(repeating_timer_1khz_callback)(struct repeating_timer *
     }
     kbd_update(&state.oric.kbd, 1000);
 
-    gettimeofday(&tv, NULL);
-    unsigned long end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
-    int execution_time = end_time_in_micros - start_time_in_micros;
-    printf("%d us\n", execution_time);
+    // gettimeofday(&tv, NULL);
+    // unsigned long end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+    // int execution_time = end_time_in_micros - start_time_in_micros;
+    // printf("%d us\n", execution_time);
 
     return true;
 }
