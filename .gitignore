@@ -1,0 +1,3 @@
+disks/**/*.h
+roms/**/*.h
+**/.DS_Store

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "disk2_fdd.h": "c",
+        "apple2.h": "c",
+        "oric_td.h": "c",
+        "sync.h": "c"
+    }
+}
