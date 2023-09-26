@@ -1,9 +1,9 @@
 [submodule "platforms/pico-6502/lib/pico-sdk"]
 	path = platforms/pico-6502/lib/pico-sdk
-	url = https://github.com/raspberrypi/pico-sdk.git
+	url = https://github.com/vsladkov/pico-sdk.git
 [submodule "platforms/pico-6502/lib/PicoDVI"]
 	path = platforms/pico-6502/lib/PicoDVI
-	url = https://github.com/Wren6991/PicoDVI.git
+	url = https://github.com/vsladkov/PicoDVI.git
 [submodule "platforms/pico-6502/lib/tinyusb"]
 	path = platforms/pico-6502/lib/tinyusb
-	url = https://github.com/hathach/tinyusb.git
+	url = https://github.com/vsladkov/tinyusb.git
