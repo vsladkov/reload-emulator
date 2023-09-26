@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.12)
 
+set(PICO_SDK_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/pico-sdk)
+set(PICO_TINYUSB_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/tinyusb)
+
+include(pico_sdk_import.cmake)
+
 project(pico-6502 C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
-set(PICO_SDK_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/pico-sdk)
-set(PICO_TINYUSB_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/tinyusb)
 set(PICO_BOARD neo6502)
-
-include(pico_sdk_import.cmake)
 
 pico_sdk_init()
 
