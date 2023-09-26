@@ -44,3 +44,8 @@ You can use dsk2nib tool to convert DSK image to NIB image, then bin2hdr to gene
 
 Please, make sure you have the proper license to use the games.
 
+## Hardware
+### Neo6502
+For Oric emulator to work correctly you must connect pin 6 of UEXT connector (GPIO 22) to pin 24 of 6502 bus connector (IRQ) using external wire.
+
+You can also connect pin 5 of UEXT connector (GPIO 23) to pin 40 of 6502 bus connector (RESET) for both Apple ][ and Oric.
