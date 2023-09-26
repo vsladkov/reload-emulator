@@ -38,7 +38,7 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-Emulator is working with embedded NIB files and C headers.
+Emulator is working with embedded NIB files as C headers.
 
 You can use dsk2nib tool to convert DSK image to NIB image, then bin2hdr to generate headers.
 
