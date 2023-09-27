@@ -693,7 +693,7 @@ static void _oric_init_memorymap(oric_t* sys) {
 }
 
 static void _oric_init_key_map(oric_t* sys) {
-    kbd_init(&sys->kbd, 1);
+    kbd_init(&sys->kbd, 2);
     const char* keymap =
         // no shift
         //   01234567 (col)
