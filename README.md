@@ -46,6 +46,6 @@ Please, make sure you have the proper license to use the games.
 
 ## Hardware
 ### Neo6502
-For Oric emulator to work correctly you must connect pin 6 of UEXT connector (GPIO 22) to pin 24 of 6502 bus connector (IRQ) using external wire.
+For Oric emulator to work correctly you must connect pin 10 of UEXT connector (GPIO 25) to pin 24 of 6502 bus connector (IRQ) using external wire.
 
-You can also connect pin 5 of UEXT connector (GPIO 23) to pin 40 of 6502 bus connector (RESET) for both Apple ][ and Oric.
+You can also connect pin 9 of UEXT connector (GPIO 26) to pin 40 of 6502 bus connector (RESET) for both Apple ][ and Oric.

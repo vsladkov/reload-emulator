@@ -186,8 +186,9 @@ static void _oric_init_key_map(oric_t* sys);
 #define _ORIC_RW_PIN          (11)
 #define _ORIC_CLOCK_PIN       (21)
 #define _ORIC_AUDIO_PIN       (20)
-#define _ORIC_RESET_PIN       (23)
-#define _ORIC_IRQ_PIN         (22)
+#define _ORIC_RESET_PIN       (26)
+#define _ORIC_IRQ_PIN         (25)
+#define _ORIC_NMI_PIN         (27)
 #else
 #define _ORIC_GPIO_MASK       (0x3FC)
 #define _ORIC_GPIO_SHIFT_BITS (2)
