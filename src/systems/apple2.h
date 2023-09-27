@@ -194,7 +194,7 @@ static uint8_t __not_in_flash() _apple2_artifact_color_lut[1<<7] = {
 #define _APPLE2_RW_PIN          (11)
 #define _APPLE2_CLOCK_PIN       (21)
 #define _APPLE2_AUDIO_PIN       (20)
-#define _APPLE2_RESET_PIN       (23)
+#define _APPLE2_RESET_PIN       (26)
 #else
 #define _APPLE2_GPIO_MASK       (0x3FC)
 #define _APPLE2_GPIO_SHIFT_BITS (2)
@@ -253,7 +253,7 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     gpio_set_dir(_APPLE2_RESET_PIN, GPIO_OUT);
 
     gpio_put(_APPLE2_RESET_PIN, 0);
-    sleep_ms(1000);
+    sleep_ms(1);
     gpio_put(_APPLE2_RESET_PIN, 1);
 
     beeper_init(&sys->beeper, &(beeper_desc_t){
@@ -297,7 +297,7 @@ void apple2_reset(apple2_t *sys) {
     }
     // reset cpu
     gpio_put(_APPLE2_RESET_PIN, 0);
-    sleep_ms(1000);
+    sleep_ms(1);
     gpio_put(_APPLE2_RESET_PIN, 1);
 }
 
@@ -563,6 +563,10 @@ void apple2_key_down(apple2_t *sys, int key_code) {
             break;
         case 0x14F:  // Right
             key_code = 0x15;
+            break;
+        case 0x145:  // F12
+            apple2_reset(sys);
+            break;
         default:
             break;
     }

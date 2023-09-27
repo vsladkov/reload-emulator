@@ -248,8 +248,13 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
     gpio_init(_ORIC_IRQ_PIN);  // IRQ
     gpio_set_dir(_ORIC_IRQ_PIN, GPIO_OUT);
 
+#ifdef PICO_NEO6502
+    gpio_init(_ORIC_NMI_PIN);  // NMI
+    gpio_set_dir(_ORIC_NMI_PIN, GPIO_OUT);
+#endif  // PICO_NEO6502
+
     gpio_put(_ORIC_RESET_PIN, 0);
-    sleep_ms(1000);
+    sleep_ms(1);
     gpio_put(_ORIC_RESET_PIN, 1);
 
     mos6522via_init(&sys->via);
@@ -290,9 +295,18 @@ void oric_discard(oric_t* sys) {
     sys->valid = false;
 }
 
+void oric_nmi(oric_t* sys) {
+    CHIPS_ASSERT(sys && sys->valid);
+#ifdef PICO_NEO6502
+    // trigger NMI
+    gpio_put(_ORIC_NMI_PIN, 0);
+    sleep_ms(1);
+    gpio_put(_ORIC_NMI_PIN, 1);
+#endif  // PICO_NEO6502
+}
+
 void oric_reset(oric_t* sys) {
     CHIPS_ASSERT(sys && sys->valid);
-    // sys->pins |= M6502_RES;
     mos6522via_reset(&sys->via);
     ay38910psg_reset(&sys->psg);
     if (sys->fdc.valid) {
@@ -303,7 +317,7 @@ void oric_reset(oric_t* sys) {
     }
     // reset cpu
     gpio_put(_ORIC_RESET_PIN, 0);
-    sleep_ms(1000);
+    sleep_ms(1);
     gpio_put(_ORIC_RESET_PIN, 1);
 }
 
@@ -753,6 +767,17 @@ static void _oric_init_key_map(oric_t* sys) {
 
 void oric_key_down(oric_t* sys, int key_code) {
     CHIPS_ASSERT(sys && sys->valid);
+    switch (key_code) {
+        case 0x144:  // F11
+            oric_nmi(sys);
+            break;
+        case 0x145:  // F12
+            oric_reset(sys);
+            break;
+        default:
+            break;
+    }
+
     kbd_key_down(&sys->kbd, key_code);
 }
 
