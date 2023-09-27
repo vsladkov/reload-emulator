@@ -1,5 +1,5 @@
-disks/**/*.h
-roms/**/*.h
+src/disks/*.h
+src/roms/*.h
 **/.DS_Store
 **/.vscode
 **/build
