@@ -84,7 +84,7 @@ extern "C" {
 #define KBD_MAX_COLUMNS      (12)
 #define KBD_MAX_LINES        (12)
 #define KBD_MAX_MOD_KEYS     (4)
-#define KBD_MAX_KEYS         (256)
+#define KBD_MAX_KEYS         (512)
 #define KBD_MAX_PRESSED_KEYS (4)
 
 // a pressed-key state

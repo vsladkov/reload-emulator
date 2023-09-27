@@ -317,7 +317,7 @@ static uint16_t _m6502_get_address() {
 #endif
     uint16_t addr = (gpio_get_all() >> _APPLE2_GPIO_SHIFT_BITS) & 0xFF;
     gpio_put(_APPLE2_OE1_PIN, 1);
-    
+
     gpio_put(_APPLE2_OE2_PIN, 0);
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -557,7 +557,18 @@ static void _apple2_init_memorymap(apple2_t *sys) {
 
 void apple2_key_down(apple2_t *sys, int key_code) {
     CHIPS_ASSERT(sys && sys->valid);
-    sys->last_key_code = key_code | 0x80;
+    switch (key_code) {
+        case 0x150:  // Left
+            key_code = 0x08;
+            break;
+        case 0x14F:  // Right
+            key_code = 0x15;
+        default:
+            break;
+    }
+    if (key_code < 128) {
+        sys->last_key_code = key_code | 0x80;
+    }
     // printf("key down: %d\n", key_code);
     // kbd_key_down(&sys->kbd, key_code);
 }
@@ -684,9 +695,7 @@ static uint8_t _apple2_get_text_character(apple2_t *sys, uint8_t code, uint16_t 
     return _apple2_reverse_7_bits(bits);
 }
 
-static uint8_t *_apple2_get_fb_addr(apple2_t *sys, uint16_t row) {
-    return &sys->fb[row * (APPLE2_SCREEN_WIDTH / 2)];
-}
+static uint8_t *_apple2_get_fb_addr(apple2_t *sys, uint16_t row) { return &sys->fb[row * (APPLE2_SCREEN_WIDTH / 2)]; }
 
 static void _apple2_lores_update(apple2_t *sys, uint16_t begin_row, uint16_t end_row) {
     if ((!sys->page2 && !sys->text_page1_dirty) || (sys->page2 && !sys->text_page2_dirty)) {

@@ -125,20 +125,24 @@ struct dvi_inst dvi0;
 
 void tmds_palette_init() { tmds_setup_palette24_symbols(oric_palette, tmds_palette, PALETTE_SIZE); }
 
-void kbd_raw_key_down(uint8_t code) {
-    if (isupper(code)) {
-        code = tolower(code);
-    } else if (islower(code)) {
-        code = toupper(code);
+void kbd_raw_key_down(int code) {
+    if (isascii(code)) {
+        if (isupper(code)) {
+            code = tolower(code);
+        } else if (islower(code)) {
+            code = toupper(code);
+        }
     }
     oric_key_down(&state.oric, (code));
 }
 
 void kbd_raw_key_up(int code) {
-    if (isupper(code)) {
-        code = tolower(code);
-    } else if (islower(code)) {
-        code = toupper(code);
+    if (isascii(code)) {
+        if (isupper(code)) {
+            code = tolower(code);
+        } else if (islower(code)) {
+            code = toupper(code);
+        }
     }
     oric_key_up(&state.oric, code);
 }

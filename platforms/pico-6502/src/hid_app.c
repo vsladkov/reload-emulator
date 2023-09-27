@@ -22,11 +22,11 @@ static void process_kbd_report(hid_keyboard_report_t const* r1, hid_keyboard_rep
             if (!find_key_in_report(r2, r1->keycode[i])) {
                 bool is_shift = r1->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
                 bool is_ctrl = r1->modifier & (KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTCTRL);
-                uint8_t code = conv_table[r1->keycode[i]][is_shift];
-                if (code > 127) {
-                    code = 0;
-                }
-                if (is_ctrl) {
+                uint8_t keycode = r1->keycode[i];
+                int code = conv_table[keycode][is_shift];
+                if (code == 0 && keycode != 0) {                    
+                    code = keycode | 0x100;
+                } else if (is_ctrl) {
                     code &= ~0x60;
                 }
                 kbd_raw_key_cb(code);
@@ -63,8 +63,8 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 
     switch (itf_protocol) {
         case HID_ITF_PROTOCOL_KEYBOARD:
-            find_pressed_keys((hid_keyboard_report_t const*)report);
-            find_released_keys((hid_keyboard_report_t const*)report);
+            find_pressed_keys((const hid_keyboard_report_t*)report);
+            find_released_keys((const hid_keyboard_report_t*)report);
             memcpy(&prev_report, report, sizeof(hid_keyboard_report_t));
             break;
         default:

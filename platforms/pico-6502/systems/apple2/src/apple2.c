@@ -132,14 +132,13 @@ struct dvi_inst dvi0;
 
 void tmds_palette_init() { tmds_setup_palette24_symbols(apple2_palette, tmds_palette, PALETTE_SIZE); }
 
-void kbd_raw_key_down(int code) { apple2_key_down(&state.apple2, toupper(code)); }
+void kbd_raw_key_down(int code) { apple2_key_down(&state.apple2, isascii(code) ? toupper(code) : code); }
 
-void kbd_raw_key_up(int code) { apple2_key_up(&state.apple2, toupper(code)); }
+void kbd_raw_key_up(int code) { apple2_key_up(&state.apple2, isascii(code) ? toupper(code) : code); }
 
 extern void apple2_render_scanline(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
 
-static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *line_buffer,
-                                                            size_t n_pix) {
+static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix) {
     interp_config c;
 
     c = interp_default_config();
@@ -163,13 +162,11 @@ static inline void __not_in_flash_func(render_empty_scanlines)() {
     for (int y = 0; y < 24; y += 2) {
         uint32_t *tmds_buf;
         queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
-        tmds_encode_palette_data((const uint32_t *)empty_scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH,
-                                 PALETTE_BITS);
+        tmds_encode_palette_data((const uint32_t *)empty_scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH, PALETTE_BITS);
         queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
 
         queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
-        tmds_encode_palette_data((const uint32_t *)empty_scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH,
-                                 PALETTE_BITS);
+        tmds_encode_palette_data((const uint32_t *)empty_scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH, PALETTE_BITS);
         queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
     }
 }

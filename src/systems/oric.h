@@ -732,13 +732,13 @@ static void _oric_init_key_map(oric_t* sys) {
     }
 
     // Special keys
-    kbd_register_key(&sys->kbd, 0x20, 0, 4, 0);  // Space
-    kbd_register_key(&sys->kbd, 0x08, 5, 4, 0);  // Cursor left
-    kbd_register_key(&sys->kbd, 0x09, 7, 4, 0);  // Cursor right
-    kbd_register_key(&sys->kbd, 0x0A, 6, 4, 0);  // Cursor down
-    kbd_register_key(&sys->kbd, 0x0B, 3, 4, 0);  // Cursor up
-    kbd_register_key(&sys->kbd, 0x01, 5, 5, 0);  // Delete
-    kbd_register_key(&sys->kbd, 0x0D, 5, 7, 0);  // Return
+    kbd_register_key(&sys->kbd, 0x20, 0, 4, 0);   // Space
+    kbd_register_key(&sys->kbd, 0x150, 5, 4, 0);  // Left
+    kbd_register_key(&sys->kbd, 0x14F, 7, 4, 0);  // Right
+    kbd_register_key(&sys->kbd, 0x151, 6, 4, 0);  // Down
+    kbd_register_key(&sys->kbd, 0x152, 3, 4, 0);  // Up
+    kbd_register_key(&sys->kbd, 0x08, 5, 5, 0);   // Delete
+    kbd_register_key(&sys->kbd, 0x0D, 5, 7, 0);   // Return
 
     kbd_register_key(&sys->kbd, 0x14, 1, 1, 2);  // Ctrl+T
     kbd_register_key(&sys->kbd, 0x10, 3, 5, 2);  // Ctrl+P
