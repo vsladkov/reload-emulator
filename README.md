@@ -48,4 +48,6 @@ Please, make sure you have the proper license to use the games.
 ### Neo6502
 For Oric emulator to work correctly you must connect pin 10 of UEXT connector (GPIO 25) to pin 24 of 6502 bus connector (IRQ) using external wire.
 
-You can also connect pin 9 of UEXT connector (GPIO 26) to pin 40 of 6502 bus connector (RESET) for both Apple ][ and Oric.
+To use F12 as RESET button (both Apple II and Oric) you have to connect pin 9 of UEXT connector (GPIO 26) to pin 40 of 6502 bus connector (RESET).
+
+To use F11 as NMI button (Oric) you have to connect pin 8 of UEXT connector (GPIO 27) to pin 26 of 6502 bus connector (NMI).
