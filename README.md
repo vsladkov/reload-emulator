@@ -91,7 +91,7 @@ uint8_t* oric_wave_images[] = {
 };
 ```
 
-First NIB file is loaded in floppy disk drive on startup. Images can be loaded dynamically at runtime in floppy dist drive and/or tape drive using F1-F9.
+First NIB file is loaded in floppy disk drive on startup. Images can be loaded dynamically at runtime in floppy disk drive and / or tape drive using F1-F9.
 
 Up to 9 disk images can be embedded in single UF2 binary (for 2MB flash).
 
