@@ -185,6 +185,8 @@ static uint8_t __not_in_flash() _apple2_artifact_color_lut[1<<7] = {
 
 #define _APPLE2_DEFAULT(val, def) (((val) != 0) ? (val) : (def))
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #ifdef PICO_NEO6502
 #define _APPLE2_GPIO_MASK       (0xFF)
 #define _APPLE2_GPIO_SHIFT_BITS (0)
@@ -278,6 +280,9 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     // Optionally setup floppy disk controller
     if (desc->fdc_enabled) {
         disk2_fdc_init(&sys->fdc);
+        if (ARRAY_SIZE(apple2_nib_images) > 0) {
+            disk2_fdd_insert_disk(&sys->fdc.fdd[0], apple2_nib_images[0]);
+        }
     }
 }
 
@@ -500,7 +505,7 @@ void apple2_tick(apple2_t *sys) {
     }
 
     // Tick FDC
-    if ((sys->system_ticks & 127) == 0 && sys->fdc.valid) {
+    if (sys->fdc.valid && (sys->system_ticks & 127) == 0) {
         disk2_fdc_tick(&sys->fdc);
     }
 
@@ -557,21 +562,40 @@ static void _apple2_init_memorymap(apple2_t *sys) {
 
 void apple2_key_down(apple2_t *sys, int key_code) {
     CHIPS_ASSERT(sys && sys->valid);
+    if (key_code == 0x150) {
+        key_code = 0x08;
+    } else if (key_code == 0x14F) {
+        key_code = 0x15;
+    }
     switch (key_code) {
-        case 0x150:  // Left
-            key_code = 0x08;
+        case 0x13A:  // F1
+        case 0x13B:  // F2
+        case 0x13C:  // F3
+        case 0x13D:  // F4
+        case 0x13E:  // F5
+        case 0x13F:  // F6
+        case 0x140:  // F7
+        case 0x141:  // F8
+        case 0x142:  // F9
+        {
+            if (sys->fdc.valid) {
+                uint8_t index = key_code - 0x13A;
+                if (ARRAY_SIZE(apple2_nib_images) > index) {
+                    disk2_fdd_insert_disk(&sys->fdc.fdd[0], apple2_nib_images[index]);
+                }
+            }
             break;
-        case 0x14F:  // Right
-            key_code = 0x15;
-            break;
+        }
+
         case 0x145:  // F12
             apple2_reset(sys);
             break;
+
         default:
+            if (key_code < 128) {
+                sys->last_key_code = key_code | 0x80;
+            }
             break;
-    }
-    if (key_code < 128) {
-        sys->last_key_code = key_code | 0x80;
     }
     // printf("key down: %d\n", key_code);
     // kbd_key_down(&sys->kbd, key_code);

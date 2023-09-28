@@ -177,6 +177,8 @@ static void _oric_init_key_map(oric_t* sys);
 
 #define _ORIC_DEFAULT(val, def) (((val) != 0) ? (val) : (def))
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #ifdef PICO_NEO6502
 #define _ORIC_GPIO_MASK       (0xFF)
 #define _ORIC_GPIO_SHIFT_BITS (0)
@@ -281,6 +283,9 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
     // Optionally setup floppy disk controller
     if (desc->fdc_enabled) {
         disk2_fdc_init(&sys->fdc);
+        if (ARRAY_SIZE(oric_nib_images) > 0) {
+            disk2_fdd_insert_disk(&sys->fdc.fdd[0], oric_nib_images[0]);
+        }
     }
 }
 
@@ -490,9 +495,9 @@ void oric_tick(oric_t* sys) {
         ay38910psg_tick_envelope_generator(&sys->psg);
     }
 
-    static uint8_t t = 0;
-    t++;
-    if (t == 46) {
+    static uint8_t t1 = 0;
+    t1++;
+    if (t1 == 46) {
         ay38910psg_tick_sample_generator(&sys->psg);
         // sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)((sys->psg.sample * 0.5f + 0.5f) * 255.0f);
         sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)(sys->psg.sample * 255.0f);
@@ -504,11 +509,11 @@ void oric_tick(oric_t* sys) {
             }
             sys->audio.sample_pos = 0;
         }
-        t = 0;
+        t1 = 0;
     }
 
     // Tick FDC
-    if ((sys->system_ticks & 127) == 0 && sys->fdc.valid) {
+    if (sys->fdc.valid && (sys->system_ticks & 127) == 0) {
         disk2_fdc_tick(&sys->fdc);
     }
 
@@ -555,7 +560,12 @@ void oric_tick(oric_t* sys) {
                 _last_motor_state = motor_state;
             }
 
-            oric_td_tick(&sys->td);
+            static uint8_t t2 = 0;
+            t2++;
+            if (t2 == 52) {
+                oric_td_tick(&sys->td);
+                t2 = 0;
+            }
             if (sys->td.port & ORIC_TD_PORT_READ) {
                 mos6522via_set_cb1(&sys->via, true);
             } else {
@@ -768,17 +778,45 @@ static void _oric_init_key_map(oric_t* sys) {
 void oric_key_down(oric_t* sys, int key_code) {
     CHIPS_ASSERT(sys && sys->valid);
     switch (key_code) {
+        case 0x13A:  // F1
+        case 0x13B:  // F2
+        case 0x13C:  // F3
+        case 0x13D:  // F4
+        case 0x13E:  // F5
+        case 0x13F:  // F6
+        case 0x140:  // F7
+        case 0x141:  // F8
+        case 0x142:  // F9
+        {
+            uint8_t index = key_code - 0x13A;
+            int num_nib_images = ARRAY_SIZE(oric_nib_images);
+            if (index < num_nib_images) {
+                if (sys->fdc.valid) {
+                    disk2_fdd_insert_disk(&sys->fdc.fdd[0], oric_nib_images[index]);
+                }
+            } else {
+                index -= num_nib_images;
+                if (index < ARRAY_SIZE(oric_wave_images)) {
+                    if (sys->td.valid) {
+                        oric_td_insert_tape(&sys->td, oric_wave_images[index]);
+                    }
+                }
+            }
+            break;
+        }
+
         case 0x144:  // F11
             oric_nmi(sys);
             break;
+
         case 0x145:  // F12
             oric_reset(sys);
             break;
+
         default:
+            kbd_key_down(&sys->kbd, key_code);
             break;
     }
-
-    kbd_key_down(&sys->kbd, key_code);
 }
 
 void oric_key_up(oric_t* sys, int key_code) {

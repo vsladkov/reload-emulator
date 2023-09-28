@@ -1,4 +1,4 @@
-src/disks/*.h
+src/images/*.h
 src/roms/*.h
 **/.DS_Store
 **/.vscode

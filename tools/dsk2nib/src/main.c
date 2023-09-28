@@ -220,7 +220,11 @@ int main(int argc, char* const argv[]) {
         }
     }
 
-    convert_dsk_to_nib(infile, outfile);
-
+    if (!infile || !outfile) {
+        print_usage(argv[0]);
+    } else {
+        convert_dsk_to_nib(infile, outfile);
+    }
+    
     return 0;
 }

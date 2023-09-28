@@ -12,10 +12,7 @@
 #include "pico/stdlib.h"
 
 #include "roms/apple2_roms.h"
-// #include "disks/neptune.h"
-#include "disks/moon_patrol.h"
-// #include "disks/karateka.h"
-// #include "disks/lode_runner.h"
+#include "images/apple2_images.h"
 
 #include "chips/chips_common.h"
 #include "chips/beeper.h"

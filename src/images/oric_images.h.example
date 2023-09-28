@@ -1,0 +1,12 @@
+#include "rdos_231.h"
+#include "oric_games.h"
+#include "pulsoids.h"
+
+uint8_t* oric_nib_images[] = {
+    rdos_231_nib_image,
+    oric_games_nib_image,
+};
+
+uint8_t* oric_wave_images[] = {
+    pulsoids_wave_image,
+};

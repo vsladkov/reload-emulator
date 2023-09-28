@@ -11,14 +11,10 @@
 #include <pico/platform.h>
 #include "pico/stdlib.h"
 
-#include "chips/chips_common.h"
-
-// #include "roms/oric_roms.h"
 #include "roms/pravetz8d_roms.h"
-#include "disks/oric_games.h"
-#include "disks/rdos_231.h"
-// #include "disks/rdos_210.h"
+#include "images/oric_images.h"
 
+#include "chips/chips_common.h"
 #include "chips/mos6522via.h"
 #include "chips/ay38910psg.h"
 #include "chips/kbd.h"
@@ -73,7 +69,7 @@ static void push_audio(const uint8_t *samples, int num_samples, void *user_data)
 // get oric_desc_t struct based on joystick type
 oric_desc_t oric_desc(void) {
     return (oric_desc_t){
-        .td_enabled = false,
+        .td_enabled = true,
         .fdc_enabled = true,
         .audio =
             {
@@ -103,7 +99,7 @@ void app_init(void) {
 #define PALETTE_BITS 3
 #define PALETTE_SIZE (1 << PALETTE_BITS)
 
-#define RGBA8(r, g, b) (0xFF000000 | (b << 16) | (g << 8) | (r))
+#define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
 
 static const uint32_t oric_palette[PALETTE_SIZE] = {
     RGBA8(0x00, 0x00, 0x00), /* black */

@@ -40,7 +40,7 @@ typedef struct {
 // Disk II floppy disk drive interface
 
 // Initialize a new floppy disk drive
-void disk2_fdd_init(disk2_fdd_t* sys, uint8_t* nib_image);
+void disk2_fdd_init(disk2_fdd_t* sys);
 
 // Discard the floppy disk drive
 void disk2_fdd_discard(disk2_fdd_t* sys);
@@ -82,7 +82,7 @@ void disk2_fdd_write_byte(disk2_fdd_t* sys, uint8_t byte);
 #define CHIPS_ASSERT(c) assert(c)
 #endif
 
-void disk2_fdd_init(disk2_fdd_t* sys, uint8_t* nib_image) {
+void disk2_fdd_init(disk2_fdd_t* sys) {
     CHIPS_ASSERT(sys && !sys->valid);
     memset(sys, 0, sizeof(disk2_fdd_t));
     sys->valid = true;
@@ -94,9 +94,7 @@ void disk2_fdd_init(disk2_fdd_t* sys, uint8_t* nib_image) {
     sys->motor_timer_ticks = 0;
     sys->control_bits = 0;
     sys->write_ready = 0x80;
-    sys->nib_image_offset = 0;
-    sys->nib_image = nib_image;
-    sys->nib_image_loaded = true;
+    sys->nib_image_loaded = false;
 }
 
 void disk2_fdd_discard(disk2_fdd_t* sys) {

@@ -76,8 +76,6 @@ void disk2_fdc_reset(disk2_fdc_t* sys);
 // Tick the floppy disk controller
 void disk2_fdc_tick(disk2_fdc_t* sys);
 
-bool disk2_fdc_insert_disk(disk2_fdc_t* sys, uint8_t drive, uint8_t* nib_image);
-
 uint8_t disk2_fdc_read_byte(disk2_fdc_t* sys, uint8_t addr);
 
 void disk2_fdc_write_byte(disk2_fdc_t* sys, uint8_t addr, uint8_t byte);
@@ -106,7 +104,7 @@ void disk2_fdc_init(disk2_fdc_t* sys) {
     CHIPS_ASSERT(sys && !sys->valid);
     memset(sys, 0, sizeof(disk2_fdc_t));
     sys->valid = true;
-    disk2_fdd_init(&sys->fdd[0], dump_disk1_nib);
+    disk2_fdd_init(&sys->fdd[0]);
     // disk2_fdd_init(&sys->fdd[1], dump_disk2_nib);
 }
 
@@ -127,14 +125,6 @@ void disk2_fdc_tick(disk2_fdc_t* sys) {
     CHIPS_ASSERT(sys && sys->valid);
     disk2_fdd_tick(&sys->fdd[0]);
     // disk2_fdd_tick(&sys->fdd[1]);
-}
-
-bool disk2_fdc_insert_disk(disk2_fdc_t* sys, uint8_t drive, uint8_t* nib_image) {
-    CHIPS_ASSERT(sys && sys->valid);
-    if (drive >= DISK2_FDC_MAX_DRIVES) {
-        return false;
-    }
-    return disk2_fdd_insert_disk(&sys->fdd[drive], nib_image);
 }
 
 uint8_t disk2_fdc_read_byte(disk2_fdc_t* sys, uint8_t addr) {

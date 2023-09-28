@@ -14,14 +14,14 @@ static void print_usage(const char* argv0) {
     exit(1);
 }
 
-static void print_file(FILE* in, FILE* out) {
+static void print_file(FILE* in, FILE* out, const char* array_name) {
     uint8_t c;
     int bytes = 0;
     int eof;
 
     fprintf(out, "#pragma once\n\n");
     fprintf(out, "// clang-format off\n");
-    fprintf(out, "uint8_t __in_flash() disk1_nib_image[] = {");
+    fprintf(out, "uint8_t __in_flash() %s[] = {", array_name);
 
     c = fgetc(in);
     eof = feof(in);
@@ -45,14 +45,14 @@ static void print_file(FILE* in, FILE* out) {
     fprintf(out, "// clang-format off\n");
 }
 
-void convert_nib_to_hdr(const char* infile, const char* outfile) {
+void convert_nib_to_hdr(const char* infile, const char* outfile, const char* array_name) {
     FILE *in, *out;
 
     in = fopen(infile, "rb");
     if (in) {
         out = fopen(outfile, "w");
         if (out) {
-            print_file(in, out);
+            print_file(in, out, array_name);
             fclose(out);
         } else {
             fprintf(stderr, "Failed to open file for writing: %s", outfile);
@@ -67,13 +67,16 @@ int main(int argc, char* const argv[]) {
     char *infile = NULL, *outfile = NULL, *array_name = NULL;
     int opt;
 
-    while ((opt = getopt(argc, argv, "i:o:h")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:a:h")) != -1) {
         switch (opt) {
             case 'i':
                 infile = strdup(optarg);
                 break;
             case 'o':
                 outfile = strdup(optarg);
+                break;
+            case 'a':
+                array_name = strdup(optarg);
                 break;
             case 'h':
             default:
@@ -82,10 +85,10 @@ int main(int argc, char* const argv[]) {
         }
     }
 
-    if (!infile || !outfile) {
+    if (!infile || !outfile || !array_name) {
         print_usage(argv[0]);
     } else {
-        convert_nib_to_hdr(infile, outfile);
+        convert_nib_to_hdr(infile, outfile, array_name);
     }
 
     return 0;
