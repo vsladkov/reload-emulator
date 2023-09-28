@@ -38,9 +38,62 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-Emulator is working with embedded NIB files as C headers.
+Apple II Emulator is working with embedded NIB images as C headers.
 
-You can use dsk2nib tool to convert DSK image to NIB image, then bin2hdr to generate headers.
+Oric emulator is working with embedded NIB and WAVE images as C headers.
+
+Building headers from DSK file (Apple II, Oric):
+
+```bash
+# Moon Patrol.DSK
+dsk2nib -i Moon Patrol.DSK -o Moon Patrol.NIB
+bin2hdr -i Moon Patrol.NIB -o moon_patrol.h -a moon_patrol_nib_image
+
+# Karateka.DSK
+dsk2nib -i Karateka.DSK -o Karateka.NIB
+bin2hdr -i Karateka.NIB -o karateka.h -a karateka_nib_image
+```
+
+Example apple2_images.h file for Apple II emulator:
+
+```
+#include "moon_patrol.h"
+#include "karateka.h"
+
+uint8_t* apple2_nib_images[] = {
+    moon_patrol_nib_image,
+    karateka_nib_image,
+};
+```
+
+Building headers from TAP file (Oric):
+
+```bash
+# Pulsoids-UK.TAP
+tap2wave -i Pulsoids-UK.TAP -o Pulsoids-UK.WAVE
+bin2hdr -i Pulsoids-UK.WAVE -o pulsoids.h -a pulsoids_wave_image
+```
+
+Example oric_images.h file for Oric emulator:
+
+```
+#include "rdos_231.h"
+#include "oric_games.h"
+#include "pulsoids.h"
+
+uint8_t* oric_nib_images[] = {
+    rdos_231_nib_image,
+    oric_games_nib_image,
+};
+
+uint8_t* oric_wave_images[] = {
+    pulsoids_wave_image,
+};
+```
+
+First NIB file is loaded in floppy disk drive on startup. Images can be loaded dynamically at runtime in floppy dist drive and/or tape drive using F1-F9.
+
+Up to 9 disk images can be embedded in single UF2 binary (for 2MB flash).
 
 Please, make sure you have the proper license to use the games.
 
