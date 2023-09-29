@@ -38,7 +38,7 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-Apple II Emulator is working with embedded NIB images as C headers.
+Apple II emulator is working with embedded NIB images as C headers.
 
 Oric emulator is working with embedded NIB and WAVE images as C headers.
 

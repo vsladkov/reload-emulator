@@ -19,6 +19,7 @@
 #include "chips/kbd.h"
 #include "chips/mem.h"
 #include "chips/clk.h"
+#include "devices/apple2_lc.h"
 #include "devices/disk2_fdd.h"
 #include "devices/disk2_fdc.h"
 #include "systems/apple2.h"

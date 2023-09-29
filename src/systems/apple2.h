@@ -25,8 +25,9 @@
     - chips/kbd.h
     - chips/mem.h
     - chips/clk.h
-    - systems/disk2_fdd.h
-    - systems/disk2_fdc.h
+    - devices/apple2_lc.h
+    - devices/disk2_fdd.h
+    - devices/disk2_fdc.h
 
     ## The Apple II
 
@@ -76,6 +77,9 @@ extern "C" {
 #define APPLE2_SCREEN_HEIGHT    192  // (192)
 #define APPLE2_FRAMEBUFFER_SIZE ((APPLE2_SCREEN_WIDTH / 2) * APPLE2_SCREEN_HEIGHT)
 
+#define APPLE2_LANGUAGE_CARD_READ  (1)
+#define APPLE2_LANGUAGE_CARD_WRITE (2)
+
 // Config parameters for apple2_init()
 typedef struct {
     bool fdc_enabled;     // Set to true to enable floppy disk controller emulation
@@ -108,6 +112,8 @@ typedef struct {
     uint8_t *rom;
     uint8_t *character_rom;
     uint8_t *boot_rom;
+
+    apple2_lc_t lc;  // Language card
 
     bool text;
     bool mix;
@@ -267,6 +273,8 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     // setup memory map and keyboard matrix
     _apple2_init_memorymap(sys);
 
+    apple2_lc_init(&sys->lc, &(apple2_lc_desc_t){&sys->mem, sys->rom});
+
     sys->text = false;
     sys->mix = false;
     sys->page2 = false;
@@ -388,74 +396,80 @@ void apple2_tick(apple2_t *sys) {
     gpio_put(_APPLE2_CLOCK_PIN, 1);
 
     if ((addr >= 0xC000) && (addr <= 0xC0FF)) {
-        if (!(addr >= 0xC0E0) && (addr <= 0xC0EF)) {
-            switch (addr) {
-                case 0xC000:
+        // Apple II I/O Page
+        switch (addr) {
+            case 0xC000:
+                if (rw) {
+                    if (sys->last_key_code != 0) {
+                        _m6502_set_data(sys->last_key_code);
+                    }
+                }
+                break;
+
+            case 0xC010:
+                sys->last_key_code &= 0x7F;
+                break;
+
+            case 0xC030:
+                beeper_toggle(&sys->beeper);
+                break;
+
+            case 0xC050:
+                sys->text = false;
+                break;
+
+            case 0xC051:
+                sys->text = true;
+                break;
+
+            case 0xC052:
+                sys->mix = false;
+                break;
+
+            case 0xC053:
+                sys->mix = true;
+                break;
+
+            case 0xC054:
+                sys->page2 = false;
+                break;
+
+            case 0xC055:
+                sys->page2 = true;
+                break;
+
+            case 0xC056:
+                sys->hires = false;
+                break;
+
+            case 0xC057:
+                sys->hires = true;
+                break;
+
+            default:
+                if ((addr >= 0xC080) && (addr <= 0xC08F)) {
+                    // Apple II 16K Language Card
+                    apple2_lc_control(&sys->lc, addr & 0xF, rw);
                     if (rw) {
-                        if (sys->last_key_code != 0) {
-                            _m6502_set_data(sys->last_key_code);
+                        _m6502_set_data(0xFF);
+                    }
+                } else if ((addr >= 0xC0E0) && (addr <= 0xC0EF)) {
+                    // Disk II FDC
+                    if (sys->fdc.valid) {
+                        if (rw) {
+                            // Memory read
+                            _m6502_set_data(disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
+                        } else {
+                            // Memory write
+                            disk2_fdc_write_byte(&sys->fdc, addr & 0xF, _m6502_get_data());
+                        }
+                    } else {
+                        if (rw) {
+                            _m6502_set_data(0x00);
                         }
                     }
-                    break;
-
-                case 0xC010:
-                    sys->last_key_code &= 0x7F;
-                    break;
-
-                case 0xC030:
-                    beeper_toggle(&sys->beeper);
-                    break;
-
-                case 0xC050:
-                    sys->text = false;
-                    break;
-
-                case 0xC051:
-                    sys->text = true;
-                    break;
-
-                case 0xC052:
-                    sys->mix = false;
-                    break;
-
-                case 0xC053:
-                    sys->mix = true;
-                    break;
-
-                case 0xC054:
-                    sys->page2 = false;
-                    break;
-
-                case 0xC055:
-                    sys->page2 = true;
-                    break;
-
-                case 0xC056:
-                    sys->hires = false;
-                    break;
-
-                case 0xC057:
-                    sys->hires = true;
-                    break;
-
-                default:
-                    break;
-            }
-        } else {
-            if (sys->fdc.valid) {
-                // Disk II FDC
-                if (rw) {
-                    // Memory read
-                    _m6502_set_data(disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
-                } else {
-                    // Memory write
-                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, _m6502_get_data());
                 }
-            } else {
-                if (rw) {
-                    _m6502_set_data(0x00);
-                }
-            }
+                break;
         }
     } else if ((addr >= 0xC600) && (addr <= 0xC6FF)) {
         if (sys->fdc.valid) {
@@ -492,7 +506,8 @@ void apple2_tick(apple2_t *sys) {
     // Update beeper
     if (beeper_tick(&sys->beeper)) {
         // New audio sample ready
-        // sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)((sys->beeper.sample * 0.5f + 0.5f) * 255.0f);
+        // sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)((sys->beeper.sample * 0.5f + 0.5f) *
+        // 255.0f);
         sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)(sys->beeper.sample * 255.0f);
         if (sys->audio.sample_pos == sys->audio.num_samples) {
             if (sys->audio.callback.func) {
@@ -550,14 +565,11 @@ uint32_t apple2_exec(apple2_t *sys, uint32_t micro_seconds) {
 
 static void _apple2_init_memorymap(apple2_t *sys) {
     mem_init(&sys->mem);
-    // memset(sys->ram, 0, sizeof(sys->ram));
     for (int addr = 0; addr < 0xC000; addr += 2) {
         sys->ram[addr] = 0;
         sys->ram[addr + 1] = 0xff;
     }
-
-    mem_map_ram(&sys->mem, 1, 0x0000, 0xC000, sys->ram);
-    mem_map_rom(&sys->mem, 1, 0xD000, 0x3000, sys->rom);
+    mem_map_ram(&sys->mem, 0, 0x0000, 0xC000, sys->ram);
 }
 
 void apple2_key_down(apple2_t *sys, int key_code) {
