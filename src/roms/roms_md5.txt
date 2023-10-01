@@ -15,7 +15,7 @@ uint8_t __not_in_flash() dump_apple2_character_rom[0x800] = {
     MD5 (341-0036.chr) = 9ac0dc8c4d0002eb45b0b84be0bde5ec
 }
 
-uint8_t __not_in_flash() dump_apple2_boot_rom[0x100] = {
+uint8_t __not_in_flash() dump_apple2_fdc_rom[0x100] = {
     MD5 (341-0027-a.p5) = 2020aa1413ff77fe29353f3ee72dc295
 }
 

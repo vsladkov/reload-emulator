@@ -78,7 +78,7 @@ apple2_desc_t apple2_desc(void) {
             {
                 .rom = {.ptr = dump_apple2_rom, .size = sizeof(dump_apple2_rom)},
                 .character_rom = {.ptr = dump_apple2_character_rom, .size = sizeof(dump_apple2_character_rom)},
-                .boot_rom = {.ptr = dump_apple2_boot_rom, .size = sizeof(dump_apple2_boot_rom)},
+                .fdc_rom = {.ptr = dump_apple2_fdc_rom, .size = sizeof(dump_apple2_fdc_rom)},
             },
     };
 }

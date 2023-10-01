@@ -88,7 +88,7 @@ typedef struct {
     struct {
         chips_range_t rom;
         chips_range_t character_rom;
-        chips_range_t boot_rom;
+        chips_range_t fdc_rom;
     } roms;
 } apple2_desc_t;
 
@@ -111,7 +111,7 @@ typedef struct {
     uint8_t ram[0xC000];
     uint8_t *rom;
     uint8_t *character_rom;
-    uint8_t *boot_rom;
+    uint8_t *fdc_rom;
 
     apple2_lc_t lc;  // Language card
 
@@ -230,10 +230,10 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
 
     CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x4000));
     CHIPS_ASSERT(desc->roms.character_rom.ptr && (desc->roms.character_rom.size == 0x800));
-    CHIPS_ASSERT(desc->roms.boot_rom.ptr && (desc->roms.boot_rom.size == 0x100));
+    CHIPS_ASSERT(desc->roms.fdc_rom.ptr && (desc->roms.fdc_rom.size == 0x100));
     sys->rom = desc->roms.rom.ptr;
     sys->character_rom = desc->roms.character_rom.ptr;
-    sys->boot_rom = desc->roms.boot_rom.ptr;
+    sys->fdc_rom = desc->roms.fdc_rom.ptr;
 
     // sys->pins = m6502_init(&sys->cpu, &(m6502_desc_t){0});
 
@@ -476,7 +476,7 @@ void apple2_tick(apple2_t *sys) {
             // Disk II boot rom
             if (rw) {
                 // Memory read
-                _m6502_set_data(sys->boot_rom[addr & 0xFF]);
+                _m6502_set_data(sys->fdc_rom[addr & 0xFF]);
             }
         } else {
             if (rw) {
