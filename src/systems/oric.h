@@ -334,6 +334,8 @@ static uint16_t _m6502_get_address() {
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
+    __asm volatile("nop\n");
+    __asm volatile("nop\n");
 #ifndef PICO_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -344,6 +346,8 @@ static uint16_t _m6502_get_address() {
     gpio_put(_ORIC_OE1_PIN, 1);
 
     gpio_put(_ORIC_OE2_PIN, 0);
+    __asm volatile("nop\n");
+    __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -366,6 +370,8 @@ static uint8_t _m6502_get_data() {
     gpio_set_dir_masked(_ORIC_GPIO_MASK, 0);
 
     gpio_put(_ORIC_OE3_PIN, 0);
+    __asm volatile("nop\n");
+    __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
