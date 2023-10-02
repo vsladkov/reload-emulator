@@ -157,10 +157,10 @@ void kbd_raw_key_up(int code) {
     oric_key_up(&state.oric, code);
 }
 
-extern void oric_render_scanline_2x(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
-extern void oric_render_scanline_3x(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
+extern void oric_render_scanline_2x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
+extern void oric_render_scanline_3x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 
-static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix) {
+static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix) {
     interp_config c;
 
     c = interp_default_config();
@@ -177,7 +177,7 @@ static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, 
     interp_config_set_signed(&c, false);
     interp_set_config(interp0, 1, &c);
 
-    oric_render_scanline_3x(pixbuf, line_buffer, n_pix);
+    oric_render_scanline_3x(pixbuf, scanbuf, n_pix);
 }
 
 #define ORIC_EMPTY_LINES ((FRAME_HEIGHT - ORIC_SCREEN_HEIGHT * 2) / 4)

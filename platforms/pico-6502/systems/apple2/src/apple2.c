@@ -141,9 +141,9 @@ void kbd_raw_key_down(int code) { apple2_key_down(&state.apple2, isascii(code) ?
 
 void kbd_raw_key_up(int code) { apple2_key_up(&state.apple2, isascii(code) ? toupper(code) : code); }
 
-extern void apple2_render_scanline(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
+extern void apple2_render_scanline(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 
-static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix) {
+static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix) {
     interp_config c;
 
     c = interp_default_config();
@@ -160,7 +160,7 @@ static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, 
     interp_config_set_signed(&c, false);
     interp_set_config(interp0, 1, &c);
 
-    apple2_render_scanline(pixbuf, line_buffer, n_pix);
+    apple2_render_scanline(pixbuf, scanbuf, n_pix);
 }
 
 #define APPLE2_EMPTY_LINES ((FRAME_HEIGHT - APPLE2_SCREEN_HEIGHT * 2) / 4)
