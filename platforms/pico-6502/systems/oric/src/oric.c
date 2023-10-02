@@ -89,12 +89,19 @@ void app_init(void) {
     oric_init(&state.oric, &desc);
 }
 
+// TMDS bit clock 295.2 MHz
+// DVDD 1.2V
+#define FRAME_WIDTH  800
+#define FRAME_HEIGHT 480
+#define VREG_VSEL    VREG_VOLTAGE_1_20
+#define DVI_TIMING   dvi_timing_800x480p_60hz
+
 // TMDS bit clock 400 MHz
 // DVDD 1.3V
-#define FRAME_WIDTH  800
-#define FRAME_HEIGHT 600
-#define VREG_VSEL    VREG_VOLTAGE_1_30
-#define DVI_TIMING   dvi_timing_800x600p_60hz
+// #define FRAME_WIDTH  800
+// #define FRAME_HEIGHT 600
+// #define VREG_VSEL    VREG_VOLTAGE_1_30
+// #define DVI_TIMING   dvi_timing_800x600p_60hz
 
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
@@ -150,7 +157,8 @@ void kbd_raw_key_up(int code) {
     oric_key_up(&state.oric, code);
 }
 
-extern void oric_render_scanline(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
+extern void oric_render_scanline_2x(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
+extern void oric_render_scanline_3x(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix);
 
 static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *line_buffer, size_t n_pix) {
     interp_config c;
@@ -169,11 +177,11 @@ static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, 
     interp_config_set_signed(&c, false);
     interp_set_config(interp0, 1, &c);
 
-    oric_render_scanline(pixbuf, line_buffer, n_pix);
+    oric_render_scanline_3x(pixbuf, line_buffer, n_pix);
 }
 
 #define ORIC_EMPTY_LINES ((FRAME_HEIGHT - ORIC_SCREEN_HEIGHT * 2) / 4)
-#define ORIC_EMPTY_COLUMNS ((FRAME_WIDTH - ORIC_SCREEN_WIDTH * 2) / 2)
+#define ORIC_EMPTY_COLUMNS ((FRAME_WIDTH - ORIC_SCREEN_WIDTH * 3) / 2)
 
 static inline void __not_in_flash_func(render_empty_scanlines)() {
     for (int y = 0; y < ORIC_EMPTY_LINES; y += 2) {
