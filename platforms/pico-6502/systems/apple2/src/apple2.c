@@ -129,9 +129,9 @@ static const uint32_t apple2_palette[PALETTE_SIZE] = {
 // clang-format on
 
 uint32_t __not_in_flash() tmds_palette[PALETTE_SIZE * 6];
+uint32_t __not_in_flash() empty_tmdsbuf[3 * FRAME_WIDTH / DVI_SYMBOLS_PER_WORD];
 
 uint8_t __not_in_flash() scanbuf[FRAME_WIDTH];
-uint8_t __not_in_flash() empty_scanbuf[FRAME_WIDTH];
 
 struct dvi_inst dvi0;
 
@@ -142,6 +142,7 @@ void kbd_raw_key_down(int code) { apple2_key_down(&state.apple2, isascii(code) ?
 void kbd_raw_key_up(int code) { apple2_key_up(&state.apple2, isascii(code) ? toupper(code) : code); }
 
 extern void apple2_render_scanline(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
+extern void copy_tmdsbuf(uint32_t *dest, const uint32_t *src);
 
 static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix) {
     interp_config c;
@@ -168,29 +169,29 @@ static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, 
 
 static inline void __not_in_flash_func(render_empty_scanlines)() {
     for (int y = 0; y < APPLE2_EMPTY_LINES; y += 2) {
-        uint32_t *tmds_buf;
-        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
-        tmds_encode_palette_data((const uint32_t *)empty_scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH, PALETTE_BITS);
-        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
+        uint32_t *tmdsbuf;
+        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
+        copy_tmdsbuf(tmdsbuf, empty_tmdsbuf);
+        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
 
-        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
-        tmds_encode_palette_data((const uint32_t *)empty_scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH, PALETTE_BITS);
-        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
+        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
+        copy_tmdsbuf(tmdsbuf, empty_tmdsbuf);
+        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
     }
 }
 
 static inline void __not_in_flash_func(render_frame)() {
     for (int y = 0; y < APPLE2_SCREEN_HEIGHT; y += 2) {
-        uint32_t *tmds_buf;
-        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
+        uint32_t *tmdsbuf;
+        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
         render_scanline((const uint32_t *)(&state.apple2.fb[y * 280]), (uint32_t *)(&scanbuf[APPLE2_EMPTY_COLUMNS]), 280);
-        tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH, PALETTE_BITS);
-        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
+        tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
+        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
 
-        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmds_buf);
+        queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
         render_scanline((const uint32_t *)(&state.apple2.fb[(y + 1) * 280]), (uint32_t *)(&scanbuf[APPLE2_EMPTY_COLUMNS]), 280);
-        tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmds_buf, FRAME_WIDTH, PALETTE_BITS);
-        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmds_buf);
+        tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
+        queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
     }
 }
 
@@ -249,6 +250,8 @@ int main() {
     dvi0.timing = &DVI_TIMING;
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
+
+    tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, empty_tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
 
     printf("Core 1 start\n");
     hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);

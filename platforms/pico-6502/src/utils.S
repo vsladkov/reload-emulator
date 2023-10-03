@@ -20,7 +20,7 @@
 
 #define decl_func decl_func_x
 
-decl_func_y copy_audio_buffer
+decl_func_y copy_audiobuf
 	push {r2-r7, lr}
 
 .rept 42

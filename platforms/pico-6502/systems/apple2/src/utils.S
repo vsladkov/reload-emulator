@@ -61,3 +61,14 @@ decl_func apple2_render_scanline
     bne 1b
 
 	pop {r3-r7, pc}
+
+//
+decl_func copy_tmdsbuf
+	push {r2-r7, lr}
+
+.rept 160
+	ldmia r1!, {r2, r3, r4, r5, r6, r7}
+	stmia r0!, {r2, r3, r4, r5, r6, r7}
+.endr
+
+	pop {r2-r7, pc}

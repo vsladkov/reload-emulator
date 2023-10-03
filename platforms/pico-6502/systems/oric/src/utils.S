@@ -28,9 +28,7 @@
 
 #define decl_func decl_func_x
 
-// 04 03 02 01  08 07 06 05  12 11 10 09
-// 01 02 03 04  05 06 07 08  09 10 11 12
-
+//
 .macro decode_pixel_data_3x rd1, rd2, rd3
 	ldr r7, [r2, #POP0_OFFS]	
 	mov \rd2, r7
@@ -84,7 +82,7 @@ decl_func oric_render_scanline_3x
 
 	pop {r3-r7, pc}
 
-
+//
 .macro decode_pixel_data_2x rd
 	ldr r7, [r2, #POP0_OFFS]
 	lsls r7, #16
@@ -119,3 +117,14 @@ decl_func oric_render_scanline_2x
     bne 1b
 
 	pop {r3-r7, pc}
+
+//
+decl_func copy_tmdsbuf
+	push {r2-r7, lr}
+
+.rept 200
+	ldmia r1!, {r2, r3, r4, r5, r6, r7}
+	stmia r0!, {r2, r3, r4, r5, r6, r7}
+.endr
+
+	pop {r2-r7, pc}
