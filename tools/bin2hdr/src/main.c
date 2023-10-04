@@ -45,7 +45,7 @@ static void print_file(FILE* in, FILE* out, const char* array_name) {
     fprintf(out, "// clang-format off\n");
 }
 
-void convert_nib_to_hdr(const char* infile, const char* outfile, const char* array_name) {
+void convert_bin_to_hdr(const char* infile, const char* outfile, const char* array_name) {
     FILE *in, *out;
 
     in = fopen(infile, "rb");
@@ -88,7 +88,7 @@ int main(int argc, char* const argv[]) {
     if (!infile || !outfile || !array_name) {
         print_usage(argv[0]);
     } else {
-        convert_nib_to_hdr(infile, outfile, array_name);
+        convert_bin_to_hdr(infile, outfile, array_name);
     }
 
     return 0;

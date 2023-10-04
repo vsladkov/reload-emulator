@@ -160,16 +160,16 @@ void audio_source_stop(int source_id) { mixer_sources[source_id].active = false;
 
 void audio_source_set_volume(int source_id, uint16_t volume) { mixer_sources[source_id].volume = volume; }
 
-extern void copy_audio_buffer(uint8_t *dest, const uint8_t *src);
+extern void copy_audiobuf(uint8_t *dest, const uint8_t *src);
 
 void audio_mixer_step(void) {
-    uint8_t *audio_buffer = audio_get_buffer();
-    if (!audio_buffer) return;
+    uint8_t *audiobuf = audio_get_buffer();
+    if (!audiobuf) return;
 
     struct MIXER_SOURCE *source = &mixer_sources[0];
     if (!source->active) return;
 
-    copy_audio_buffer(audio_buffer, source->samples + source->pos);
+    copy_audiobuf(audiobuf, source->samples + source->pos);
     source->pos += AUDIO_BUFFER_SIZE;
     // handle source termination
     if (source->pos == source->len) {

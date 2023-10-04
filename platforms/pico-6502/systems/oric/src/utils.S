@@ -28,8 +28,62 @@
 
 #define decl_func decl_func_x
 
+//
+.macro decode_pixel_data_3x rd1, rd2, rd3
+	ldr r7, [r2, #POP0_OFFS]	
+	mov \rd2, r7
+	lsls r7, #8
+	orrs \rd2, r7
+	lsls r7, #16
+	mov \rd1, r7
+	ldr r7, [r2, #POP0_OFFS]
+	orrs \rd1, r7
+	lsls r7, #8
+	orrs \rd1, r7
+	lsls r7, #8
+	orrs \rd1, r7
+	ldr r7, [r2, #POP0_OFFS]	
+	lsls r7, #8
+	mov \rd3, r7
+	lsls r7, #8
+	orrs \rd3, r7
+	lsls r7, #8
+	orrs \rd3, r7
+	ldr r7, [r2, #POP0_OFFS]	
+	orrs \rd3, r7
+	lsls r7, #16
+	orrs \rd2, r7
+	lsls r7, #8
+	orrs \rd2, r7
+.endm
 
-.macro decode_pixel_data rd
+decl_func oric_render_scanline_3x
+	push {r3-r7, lr}
+	
+	lsls r2, #1
+	mov r3, r2
+	lsls r2, #1
+	add r2, r3
+	add r2, r1
+	mov ip, r2
+	ldr r2, =(SIO_BASE + SIO_INTERP0_ACCUM0_OFFSET)
+
+.align 2
+1:
+	ldmia r0!, {r7}
+	str r7, [r2, #ACCUM0_OFFS]
+	str r7, [r2, #ACCUM1_OFFS]
+	decode_pixel_data_3x r3, r4, r5
+    stmia r1!, {r3, r4, r5}
+	decode_pixel_data_3x r3, r4, r5
+    stmia r1!, {r3, r4, r5}
+	cmp r1, ip
+    bne 1b
+
+	pop {r3-r7, pc}
+
+//
+.macro decode_pixel_data_2x rd
 	ldr r7, [r2, #POP0_OFFS]
 	lsls r7, #16
 	mov \rd, r7
@@ -41,7 +95,7 @@
 	orrs \rd, r7
 .endm
 
-decl_func oric_render_scanline
+decl_func oric_render_scanline_2x
 	push {r3-r7, lr}
 	
 	lsls r2, #2
@@ -54,12 +108,23 @@ decl_func oric_render_scanline
 	ldmia r0!, {r7}
 	str r7, [r2, #ACCUM0_OFFS]
 	str r7, [r2, #ACCUM1_OFFS]
-	decode_pixel_data r3
-	decode_pixel_data r4
-	decode_pixel_data r5
-	decode_pixel_data r6
+	decode_pixel_data_2x r3
+	decode_pixel_data_2x r4
+	decode_pixel_data_2x r5
+	decode_pixel_data_2x r6
     stmia r1!, {r3, r4, r5, r6}
 	cmp r1, ip
     bne 1b
 
 	pop {r3-r7, pc}
+
+//
+decl_func copy_tmdsbuf
+	push {r2-r7, lr}
+
+.rept 200
+	ldmia r1!, {r2, r3, r4, r5, r6, r7}
+	stmia r0!, {r2, r3, r4, r5, r6, r7}
+.endr
+
+	pop {r2-r7, pc}
