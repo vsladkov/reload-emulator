@@ -1,6 +1,6 @@
 #pragma once
 /*#
-    # apple2p.h
+    # apple2.h
 
     An Apple II emulator in a C header.
 
@@ -28,6 +28,7 @@
     - devices/apple2_lc.h
     - devices/disk2_fdd.h
     - devices/disk2_fdc.h
+    - devices/apple2_fdc_rom.h
     - devices/prodos_hdd.h
     - devices/prodos_hdc.h
     - devices/prodos_hdc_rom.h

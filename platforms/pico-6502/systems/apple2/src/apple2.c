@@ -22,6 +22,7 @@
 #include "devices/apple2_lc.h"
 #include "devices/disk2_fdd.h"
 #include "devices/disk2_fdc.h"
+#include "devices/apple2_fdc_rom.h"
 #include "devices/prodos_hdd.h"
 #include "devices/prodos_hdc.h"
 #include "devices/prodos_hdc_rom.h"
@@ -80,10 +81,10 @@ apple2_desc_t apple2_desc(void) {
             },
         .roms =
             {
-                .rom = {.ptr = dump_apple2_rom, .size = sizeof(dump_apple2_rom)},
-                .character_rom = {.ptr = dump_apple2_character_rom, .size = sizeof(dump_apple2_character_rom)},
-                .fdc_rom = {.ptr = dump_apple2_fdc_rom, .size = sizeof(dump_apple2_fdc_rom)},
-                .hdc_rom = {.ptr = dump_apple2_hdc_rom, .size = sizeof(dump_apple2_hdc_rom)},
+                .rom = {.ptr = apple2_rom, .size = sizeof(apple2_rom)},
+                .character_rom = {.ptr = apple2_character_rom, .size = sizeof(apple2_character_rom)},
+                .fdc_rom = {.ptr = apple2_fdc_rom, .size = sizeof(apple2_fdc_rom)},
+                .hdc_rom = {.ptr = prodos_hdc_rom, .size = sizeof(prodos_hdc_rom)},
             },
     };
 }

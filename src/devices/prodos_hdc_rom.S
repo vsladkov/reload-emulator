@@ -1,5 +1,5 @@
-; cl65 -t none apple2_hdc_rom.S
-; bin2hdr -i prodos_hdc_rom -o prodos_hdc_rom.h -a dump_apple2_hdc_rom
+; cl65 -t none prodos_hdc_rom.S
+; bin2hdr -i prodos_hdc_rom -o prodos_hdc_rom.h -a prodos_hdc_rom
 
 .feature c_comments
 

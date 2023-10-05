@@ -28,6 +28,7 @@
     - chips/clk.h
     - systems/oric_fdd.h
     - systems/oric_fdc.h
+    - systems/oric_fdc_rom.h
     - systems/oric_td.h
 
     ## The Oric

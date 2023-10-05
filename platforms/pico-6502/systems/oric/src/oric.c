@@ -23,6 +23,7 @@
 #include "devices/oric_td.h"
 #include "devices/disk2_fdd.h"
 #include "devices/disk2_fdc.h"
+#include "devices/oric_fdc_rom.h"
 #include "systems/oric.h"
 
 #include "hardware/clocks.h"
@@ -78,8 +79,8 @@ oric_desc_t oric_desc(void) {
             },
         .roms =
             {
-                .rom = {.ptr = dump_oric_rom, .size = sizeof(dump_oric_rom)},
-                .boot_rom = {.ptr = dump_oric_boot_rom, .size = sizeof(dump_oric_boot_rom)},
+                .rom = {.ptr = oric_rom, .size = sizeof(oric_rom)},
+                .boot_rom = {.ptr = oric_boot_rom, .size = sizeof(oric_boot_rom)},
             },
     };
 }
