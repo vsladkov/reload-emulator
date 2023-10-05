@@ -75,14 +75,10 @@ extern "C" {
 #define APPLE2_FREQUENCY             (1021800)
 #define APPLE2_MAX_AUDIO_SAMPLES     (2048)     // Max number of audio samples in internal sample buffer
 #define APPLE2_DEFAULT_AUDIO_SAMPLES (2048)     // Default number of samples in internal sample buffer
-#define APPLE2_MAX_TAPE_SIZE         (1 << 16)  // Max size of tape file in bytes
 
 #define APPLE2_SCREEN_WIDTH     560  // (280 * 2)
 #define APPLE2_SCREEN_HEIGHT    192  // (192)
 #define APPLE2_FRAMEBUFFER_SIZE ((APPLE2_SCREEN_WIDTH / 2) * APPLE2_SCREEN_HEIGHT)
-
-#define APPLE2_LANGUAGE_CARD_READ  (1)
-#define APPLE2_LANGUAGE_CARD_WRITE (2)
 
 // Config parameters for apple2_init()
 typedef struct {
@@ -346,8 +342,6 @@ static uint16_t _m6502_get_address() {
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
 #ifndef PICO_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -358,8 +352,6 @@ static uint16_t _m6502_get_address() {
     gpio_put(_APPLE2_OE1_PIN, 1);
 
     gpio_put(_APPLE2_OE2_PIN, 0);
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -382,8 +374,6 @@ static uint8_t _m6502_get_data() {
     gpio_set_dir_masked(_APPLE2_GPIO_MASK, 0);
 
     gpio_put(_APPLE2_OE3_PIN, 0);
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
