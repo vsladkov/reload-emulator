@@ -22,6 +22,9 @@
 #include "devices/apple2_lc.h"
 #include "devices/disk2_fdd.h"
 #include "devices/disk2_fdc.h"
+#include "devices/prodos_hdd.h"
+#include "devices/prodos_hdc.h"
+#include "devices/prodos_hdc_rom.h"
 #include "systems/apple2.h"
 
 #include "hardware/clocks.h"
@@ -68,7 +71,8 @@ static void push_audio(const uint8_t *samples, int num_samples, void *user_data)
 // get apple2_desc_t struct based on joystick type
 apple2_desc_t apple2_desc(void) {
     return (apple2_desc_t){
-        .fdc_enabled = true,
+        .fdc_enabled = false,
+        .hdc_enabled = true,
         .audio =
             {
                 .callback = {.func = push_audio},
@@ -78,7 +82,8 @@ apple2_desc_t apple2_desc(void) {
             {
                 .rom = {.ptr = dump_apple2_rom, .size = sizeof(dump_apple2_rom)},
                 .character_rom = {.ptr = dump_apple2_character_rom, .size = sizeof(dump_apple2_character_rom)},
-                .boot_rom = {.ptr = dump_apple2_boot_rom, .size = sizeof(dump_apple2_boot_rom)},
+                .fdc_rom = {.ptr = dump_apple2_fdc_rom, .size = sizeof(dump_apple2_fdc_rom)},
+                .hdc_rom = {.ptr = dump_apple2_hdc_rom, .size = sizeof(dump_apple2_hdc_rom)},
             },
     };
 }

@@ -8,7 +8,7 @@
 
 static void print_usage(const char* argv0) {
     fprintf(stderr,
-            "Usage: %s [-i BIN_file] [-o header_file]\n"
+            "Usage: %s -i binary_file -o header_file -a array_name\n"
             "\t-h show this help\n",
             argv0);
     exit(1);

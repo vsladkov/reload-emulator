@@ -28,6 +28,9 @@
     - devices/apple2_lc.h
     - devices/disk2_fdd.h
     - devices/disk2_fdc.h
+    - devices/prodos_hdd.h
+    - devices/prodos_hdc.h
+    - devices/prodos_hdc_rom.h
 
     ## The Apple II
 
@@ -83,12 +86,14 @@ extern "C" {
 // Config parameters for apple2_init()
 typedef struct {
     bool fdc_enabled;     // Set to true to enable floppy disk controller emulation
+    bool hdc_enabled;     // Set to true to enable hard disk controller emulation
     chips_debug_t debug;  // Optional debugging hook
     chips_audio_desc_t audio;
     struct {
         chips_range_t rom;
         chips_range_t character_rom;
-        chips_range_t boot_rom;
+        chips_range_t fdc_rom;
+        chips_range_t hdc_rom;
     } roms;
 } apple2_desc_t;
 
@@ -111,7 +116,8 @@ typedef struct {
     uint8_t ram[0xC000];
     uint8_t *rom;
     uint8_t *character_rom;
-    uint8_t *boot_rom;
+    uint8_t *fdc_rom;
+    uint8_t *hdc_rom;
 
     apple2_lc_t lc;  // Language card
 
@@ -131,6 +137,8 @@ typedef struct {
     uint8_t fb[APPLE2_FRAMEBUFFER_SIZE];
 
     disk2_fdc_t fdc;  // Disk II floppy disk controller
+
+    prodos_hdc_t hdc;  // ProDOS hard disk controller
 
     uint8_t last_key_code;
 
@@ -229,10 +237,12 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
 
     CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x4000));
     CHIPS_ASSERT(desc->roms.character_rom.ptr && (desc->roms.character_rom.size == 0x800));
-    CHIPS_ASSERT(desc->roms.boot_rom.ptr && (desc->roms.boot_rom.size == 0x100));
+    CHIPS_ASSERT(desc->roms.fdc_rom.ptr && (desc->roms.fdc_rom.size == 0x100));
+    CHIPS_ASSERT(desc->roms.hdc_rom.ptr && (desc->roms.hdc_rom.size == 0x100));
     sys->rom = desc->roms.rom.ptr;
     sys->character_rom = desc->roms.character_rom.ptr;
-    sys->boot_rom = desc->roms.boot_rom.ptr;
+    sys->fdc_rom = desc->roms.fdc_rom.ptr;
+    sys->hdc_rom = desc->roms.hdc_rom.ptr;
 
     // sys->pins = m6502_init(&sys->cpu, &(m6502_desc_t){0});
 
@@ -291,12 +301,23 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
             disk2_fdd_insert_disk(&sys->fdc.fdd[0], apple2_nib_images[0]);
         }
     }
+
+    // Optionally setup hard disk controller
+    if (desc->hdc_enabled) {
+        prodos_hdc_init(&sys->hdc);
+        if (ARRAY_SIZE(apple2_po_images) > 0) {
+            prodos_hdd_insert_disk(&sys->hdc.hdd[0], apple2_po_images[0], apple2_po_image_sizes[0]);
+        }
+    }
 }
 
 void apple2_discard(apple2_t *sys) {
     CHIPS_ASSERT(sys && sys->valid);
     if (sys->fdc.valid) {
         disk2_fdc_discard(&sys->fdc);
+    }
+    if (sys->hdc.valid) {
+        prodos_hdc_discard(&sys->hdc);
     }
     sys->valid = false;
 }
@@ -306,6 +327,9 @@ void apple2_reset(apple2_t *sys) {
     beeper_reset(&sys->beeper);
     if (sys->fdc.valid) {
         disk2_fdc_reset(&sys->fdc);
+    }
+    if (sys->hdc.valid) {
+        prodos_hdc_reset(&sys->hdc);
     }
     // reset cpu
     gpio_put(_APPLE2_RESET_PIN, 0);
@@ -473,6 +497,21 @@ void apple2_tick(apple2_t *sys) {
                             _m6502_set_data(0x00);
                         }
                     }
+                } else if ((addr >= 0xC0F0) && (addr <= 0xC0FF)) {
+                    // ProDOS HDC
+                    if (sys->hdc.valid) {
+                        if (rw) {
+                            // Memory read
+                            _m6502_set_data(prodos_hdc_read_byte(&sys->hdc, addr & 0xF));
+                        } else {
+                            // Memory write
+                            prodos_hdc_write_byte(&sys->hdc, addr & 0xF, _m6502_get_data(), &sys->mem);
+                        }
+                    } else {
+                        if (rw) {
+                            _m6502_set_data(0x00);
+                        }
+                    }
                 }
                 break;
         }
@@ -481,7 +520,19 @@ void apple2_tick(apple2_t *sys) {
             // Disk II boot rom
             if (rw) {
                 // Memory read
-                _m6502_set_data(sys->boot_rom[addr & 0xFF]);
+                _m6502_set_data(sys->fdc_rom[addr & 0xFF]);
+            }
+        } else {
+            if (rw) {
+                _m6502_set_data(0x00);
+            }
+        }
+    } else if ((addr >= 0xC700) && (addr <= 0xC7FF)) {
+        if (sys->hdc.valid) {
+            // Hard disk boot rom
+            if (rw) {
+                // Memory read
+                _m6502_set_data(sys->hdc_rom[addr & 0xFF]);
             }
         } else {
             if (rw) {
