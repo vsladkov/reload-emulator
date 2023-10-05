@@ -42,6 +42,6 @@ uint8_t __not_in_flash() oric_rom[0x4000] = {
 }
 
 // moved to oric_fdc_rom.h
-uint8_t __not_in_flash() oric_boot_rom[0x200] = {
+uint8_t __not_in_flash() oric_fdc_rom[0x200] = {
     MD5 (8dos2.rom) = 5f3cd5a4307fed7a9dfe8faa4c044273
 }
