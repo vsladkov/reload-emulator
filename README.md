@@ -38,7 +38,7 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-Apple II emulator is working with embedded NIB images as C headers.
+Apple II emulator is working with embedded ProDOS images and NIB images as C headers.
 
 Oric emulator is working with embedded NIB and WAVE images as C headers.
 
@@ -52,6 +52,9 @@ bin2hdr -i Moon Patrol.NIB -o moon_patrol.h -a moon_patrol_nib_image
 # Karateka.DSK
 dsk2nib -i Karateka.DSK -o Karateka.NIB
 bin2hdr -i Karateka.NIB -o karateka.h -a karateka_nib_image
+
+#ProDOS 
+bin2hdr -i neo6502.po -o neo6502.h -a neo6502_po_image
 ```
 
 Example apple2_images.h file for Apple II emulator:
@@ -59,11 +62,21 @@ Example apple2_images.h file for Apple II emulator:
 ```
 #include "moon_patrol.h"
 #include "karateka.h"
+#include "neo6502.h"
 
 uint8_t* apple2_nib_images[] = {
     moon_patrol_nib_image,
     karateka_nib_image,
 };
+
+uint8_t* apple2_po_images[] = {
+    neo6502_po_image,
+};
+
+uint32_t apple2_po_image_sizes[] = {
+    sizeof(neo6502_po_image),
+};
+
 ```
 
 Building headers from TAP file (Oric):
