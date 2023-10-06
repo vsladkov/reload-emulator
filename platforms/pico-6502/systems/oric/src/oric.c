@@ -97,6 +97,13 @@ void app_init(void) {
 #define VREG_VSEL    VREG_VOLTAGE_1_20
 #define DVI_TIMING   dvi_timing_800x480p_60hz
 
+// TMDS bit clock 372 MHz
+// DVDD 1.3V
+// #define FRAME_WIDTH  960
+// #define FRAME_HEIGHT 544
+// #define VREG_VSEL    VREG_VOLTAGE_1_30
+// #define DVI_TIMING   dvi_timing_960x544p_60hz
+
 // TMDS bit clock 400 MHz
 // DVDD 1.3V
 // #define FRAME_WIDTH  800
@@ -273,7 +280,7 @@ int main() {
     tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, empty_tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
 
     printf("Core 1 start\n");
-    // hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
+    hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
     multicore_launch_core1(core1_main);
 
     struct repeating_timer timer_20hz;
