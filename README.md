@@ -3,9 +3,22 @@ Reload - Portable Retro Computers Emulator
 
 Supported machines:
 
-- Apple //e
-- Apple ][+
-- Oric Atmos
+### Apple //e
+  - 128 KB RAM installed 
+  - Extended 80 column card in the AUX slot
+  - Disk II controller and 1 drive in slot 6
+  - ProDOS hard disk controller in slot 7
+
+### Apple ][+
+  - 48 KB RAM installed
+  - 16K Language Card in slot 0,
+  - Disk II controller and 1 drive in slot 6
+  - ProDOS hard disk controller in slot 7
+
+### Oric Atmos
+  - 48 KB RAM installed
+  - 16 KB Overlay RAM installed
+  - Disk II controller installed and 1 drive
 
 ## Requirements
 ### Tools
@@ -44,7 +57,7 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-Apple ][+ and Apple //e emulators are working with embedded ProDOS images and NIB images as C headers.
+Apple //e and Apple ][+ emulators are working with embedded ProDOS images and NIB images as C headers.
 
 Oric emulator is working with embedded NIB and WAVE images as C headers.
 
