@@ -1,8 +1,9 @@
-Apple II roms
+Apple ][ roms
+=============
 
 apple2_roms.h
 
-uint8_t __not_in_flash() apple2_rom[0x4000] = {
+uint8_t __not_in_flash() apple2_rom[0x3000] = {
     MD5 (341-0011.d0) = 89ca5cd551ffad9a557652a97dcb6627
     MD5 (341-0012.d8) = 42333f24cd6e70696b212b042f3166aa
     MD5 (341-0013.e0) = 5de50bebc41e59ae4eb27be4c24b6814
@@ -20,7 +21,28 @@ uint8_t __not_in_flash() apple2_fdc_rom[0x100] = {
     MD5 (341-0027-a.p5) = 2020aa1413ff77fe29353f3ee72dc295
 }
 
+
+Apple //e roms
+==============
+
+apple2e_roms.h
+
+uint8_t __not_in_flash() apple2e_rom[0x4000] = {
+    MD5 (342-0135-b.64) = 0b150f4bfa090770a866cc5d214703f4
+    MD5 (342-0134-a.64) = 72924019cf1719765e4fde35e59c1c7d
+} 
+
+uint8_t __not_in_flash() apple2_character_rom[0x1000] = {
+    MD5 (342-0133-a.chr) = e6d453d8738e6df4f73df8c8051df3e8
+}
+
+uint8_t __not_in_flash() apple2_keyboard_rom[0x800] = {
+    MD5 (342-0132-c.e12) = 4431aea380185e3f509285540d7cb418
+}
+
+
 Oric roms
+=========
 
 oric_roms.h
 
@@ -33,7 +55,9 @@ uint8_t __not_in_flash() oric_fdc_rom[0x200] = {
     MD5 (8dos2.rom) = 5f3cd5a4307fed7a9dfe8faa4c044273
 }
 
+
 Pravetz 8D roms
+===============
 
 pravetz8d_roms.h
 
