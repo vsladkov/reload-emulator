@@ -156,7 +156,7 @@ typedef struct {
     uint8_t last_key_code;
 
     bool open_apple_pressed;
-    bool closed_apple_pressed;
+    bool solid_apple_pressed;
 
     uint32_t system_ticks;
 } apple2e_t;
@@ -654,7 +654,7 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
             break;
 
         case 0x62:  // Solid Apple
-        case 0x6a:
+        case 0x6A:
             if (rw) {
                 wdc65C02cpu_set_data(0x00);
             }
@@ -952,9 +952,11 @@ void apple2e_key_down(apple2e_t *sys, int key_code) {
             break;
 
         case 0x1E3:  // GUI LEFT
+            sys->open_apple_pressed = true;
             break;
 
         case 0x1E7:  // GUI RIGHT
+            sys->solid_apple_pressed = true;
             break;
 
         default:
@@ -964,13 +966,23 @@ void apple2e_key_down(apple2e_t *sys, int key_code) {
             break;
     }
     // printf("key down: %d\n", key_code);
-    // kbd_key_down(&sys->kbd, key_code);
 }
 
 void apple2e_key_up(apple2e_t *sys, int key_code) {
     CHIPS_ASSERT(sys && sys->valid);
-    (void)key_code;
-    // kbd_key_up(&sys->kbd, key_code);
+    switch (key_code) {
+        case 0x1E3:  // GUI LEFT
+            sys->open_apple_pressed = false;
+            break;
+
+        case 0x1E7:  // GUI RIGHT
+            sys->solid_apple_pressed = false;
+            break;
+
+        default:
+            break;
+    }
+    // printf("key down: %d\n", key_code);
 }
 
 uint32_t apple2e_save_snapshot(apple2e_t *sys, apple2e_t *dst) {
