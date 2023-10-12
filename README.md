@@ -9,13 +9,13 @@ Supported machines:
   - ProDOS hard disk controller in slot 7
 
 ### Apple ][+
-  - 48 KB RAM installed
+  - 64 KB RAM installed
   - 16K Language Card in slot 0,
   - Disk II controller and 1 drive in slot 6
   - ProDOS hard disk controller in slot 7
 
 ### Oric Atmos
-  - 48 KB RAM installed
+  - 64 KB RAM installed
   - 16 KB Overlay RAM installed
   - Disk II controller installed and 1 drive
 
