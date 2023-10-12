@@ -649,14 +649,14 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
         case 0x61:  // Open Apple
         case 0x69:
             if (rw) {
-                wdc65C02cpu_set_data(0x00);
+                wdc65C02cpu_set_data(sys->open_apple_pressed ? 0x80 : 00);
             }
             break;
 
         case 0x62:  // Solid Apple
         case 0x6A:
             if (rw) {
-                wdc65C02cpu_set_data(0x00);
+                wdc65C02cpu_set_data(sys->solid_apple_pressed ? 0x80 : 00);
             }
             break;
 
