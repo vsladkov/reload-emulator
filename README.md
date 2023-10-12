@@ -1,6 +1,12 @@
 # reload-emulator
 Reload - Portable Retro Computers Emulator
 
+Supported machines:
+
+Apple //e
+Apple ][+
+Oric Atmos
+
 ## Requirements
 ### Tools
 - cmake
@@ -38,11 +44,11 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-Apple II emulator is working with embedded ProDOS images and NIB images as C headers.
+Apple ][+ and Apple //e emulators are working with embedded ProDOS images and NIB images as C headers.
 
 Oric emulator is working with embedded NIB and WAVE images as C headers.
 
-Building headers from DSK file (Apple II, Oric):
+Building headers from DSK file (Apple ][, Oric):
 
 ```bash
 # Moon Patrol.DSK
@@ -57,7 +63,7 @@ bin2hdr -i Karateka.NIB -o karateka.h -a karateka_nib_image
 bin2hdr -i neo6502.po -o neo6502.h -a neo6502_po_image
 ```
 
-Example apple2_images.h file for Apple II emulator:
+Example apple2_images.h file for Apple ][ emulator:
 
 ```
 #include "moon_patrol.h"
@@ -114,6 +120,6 @@ Please, make sure you have the proper license to use the games.
 ### Neo6502
 For Oric emulator to work correctly you must connect pin 10 of UEXT connector (GPIO 25) to pin 24 of 6502 bus connector (IRQ) using external wire.
 
-To use F12 as RESET button (both Apple II and Oric) you have to connect pin 9 of UEXT connector (GPIO 26) to pin 40 of 6502 bus connector (RESET).
+To use F12 as RESET button (both Apple ][ and Oric) you have to connect pin 9 of UEXT connector (GPIO 26) to pin 40 of 6502 bus connector (RESET).
 
 To use F11 as NMI button (Oric) you have to connect pin 8 of UEXT connector (GPIO 27) to pin 26 of 6502 bus connector (NMI).
