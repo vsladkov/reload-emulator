@@ -30,7 +30,7 @@ static void print_file(FILE* in, FILE* out, const char* array_name) {
             fprintf(out, "\n\t");
         }
         bytes++;
-        fprintf(out, "0x%02x", c);
+        fprintf(out, "0x%02X", c);
 
         c = fgetc(in);
         eof = feof(in);

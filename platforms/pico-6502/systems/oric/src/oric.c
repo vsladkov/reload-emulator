@@ -15,6 +15,7 @@
 #include "images/oric_images.h"
 
 #include "chips/chips_common.h"
+#include "chips/wdc65C02cpu.h"
 #include "chips/mos6522via.h"
 #include "chips/ay38910psg.h"
 #include "chips/kbd.h"
@@ -151,7 +152,7 @@ void kbd_raw_key_down(int code) {
             code = toupper(code);
         }
     }
-    oric_key_down(&state.oric, (code));
+    oric_key_down(&state.oric, code);
 }
 
 void kbd_raw_key_up(int code) {
@@ -269,7 +270,7 @@ int main() {
     app_init();
     tmds_palette_init();
     tusb_init();
-    audio_init(_ORIC_AUDIO_PIN, 22050);
+    audio_init(_AUDIO_PIN, 22050);
 
     printf("Configuring DVI\n");
 

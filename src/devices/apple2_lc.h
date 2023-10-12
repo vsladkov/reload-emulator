@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
-#define APPLE2_LC_READ  (1)
-#define APPLE2_LC_WRITE (2)
+#define APPLE2_LC_READ_ENABLED  (1)
+#define APPLE2_LC_WRITE_ENABLED (2)
 
 // Config parameters for apple2_lc_init()
 typedef struct {
@@ -25,11 +25,9 @@ typedef struct {
     mem_t* sys_mem;
     uint8_t* sys_rom;
 
-    uint8_t ram[0x2000];
-    uint8_t first_bank[0x1000];
-    uint8_t second_bank[0x1000];
+    uint8_t ram[0x4000];
 
-    uint8_t* current_bank;
+    uint16_t current_bank;
     uint8_t state;
     bool prewrite;
 } apple2_lc_t;
@@ -45,7 +43,7 @@ void apple2_lc_discard(apple2_lc_t* dev);
 // Reset the language card
 void apple2_lc_reset(apple2_lc_t* dev);
 
-void apple2_lc_control(apple2_lc_t* dev, uint8_t offset, bool reading);
+void apple2_lc_control(apple2_lc_t* dev, uint8_t offset, bool rw);
 
 // Prepare a new language card snapshot for saving
 void apple2_lc_snapshot_onsave(apple2_lc_t* snapshot);
@@ -71,12 +69,12 @@ void apple2_lc_init(apple2_lc_t* dev, const apple2_lc_desc_t* desc) {
     dev->sys_mem = desc->sys_mem;
     dev->sys_rom = desc->sys_rom;
     dev->valid = true;
-    dev->current_bank = dev->second_bank;
-    dev->state &= ~APPLE2_LC_READ;
-    dev->state |= APPLE2_LC_WRITE;
+    dev->current_bank = 0x1000;
+    dev->state &= ~APPLE2_LC_READ_ENABLED;
+    dev->state |= APPLE2_LC_WRITE_ENABLED;
     dev->prewrite = false;
-    mem_map_rw(dev->sys_mem, 0, 0xD000, 0x1000, dev->sys_rom, dev->second_bank);
-    mem_map_rw(dev->sys_mem, 0, 0xE000, 0x2000, dev->sys_rom + 0x1000, dev->ram);
+    mem_map_rw(dev->sys_mem, 0, 0xD000, 0x1000, dev->sys_rom, dev->ram + dev->current_bank);
+    mem_map_rw(dev->sys_mem, 0, 0xE000, 0x2000, dev->sys_rom + 0x1000, dev->ram + 0x2000);
 }
 
 void apple2_lc_discard(apple2_lc_t* dev) {
@@ -86,55 +84,55 @@ void apple2_lc_discard(apple2_lc_t* dev) {
 
 void apple2_lc_reset(apple2_lc_t* dev) { CHIPS_ASSERT(dev && dev->valid); }
 
-void apple2_lc_control(apple2_lc_t* dev, uint8_t offset, bool reading) {
+void apple2_lc_control(apple2_lc_t* dev, uint8_t offset, bool rw) {
     CHIPS_ASSERT(dev && dev->valid);
     if ((offset & 1) == 0) {
         dev->prewrite = false;
-        dev->state &= ~APPLE2_LC_WRITE;
+        dev->state &= ~APPLE2_LC_WRITE_ENABLED;
     }
 
-    if (!reading) {
+    if (!rw) {
         dev->prewrite = false;
     } else if ((offset & 1) == 1) {
         if (dev->prewrite == false) {
             dev->prewrite = true;
         } else {
-            dev->state |= APPLE2_LC_WRITE;
+            dev->state |= APPLE2_LC_WRITE_ENABLED;
         }
     }
 
     switch (offset & 3) {
         case 0:
         case 3: {
-            dev->state |= APPLE2_LC_READ;
+            dev->state |= APPLE2_LC_READ_ENABLED;
             break;
         }
 
         case 1:
         case 2: {
-            dev->state &= ~APPLE2_LC_READ;
+            dev->state &= ~APPLE2_LC_READ_ENABLED;
             break;
         }
     }
 
     if (!(offset & 8)) {
-        dev->current_bank = dev->first_bank;
+        dev->current_bank = 0x1000;
     } else {
-        dev->current_bank = dev->second_bank;
+        dev->current_bank = 0;
     }
 
-    if (dev->state & APPLE2_LC_READ) {
-        if (dev->state & APPLE2_LC_WRITE) {
-            mem_map_ram(dev->sys_mem, 0, 0xD000, 0x1000, dev->current_bank);
-            mem_map_ram(dev->sys_mem, 0, 0xE000, 0x2000, dev->ram);
+    if (dev->state & APPLE2_LC_READ_ENABLED) {
+        if (dev->state & APPLE2_LC_WRITE_ENABLED) {
+            mem_map_ram(dev->sys_mem, 0, 0xD000, 0x1000, dev->ram + dev->current_bank);
+            mem_map_ram(dev->sys_mem, 0, 0xE000, 0x2000, dev->ram + 0x2000);
         } else {
-            mem_map_rom(dev->sys_mem, 0, 0xD000, 0x1000, dev->current_bank);
-            mem_map_rom(dev->sys_mem, 0, 0xE000, 0x2000, dev->ram);
+            mem_map_rom(dev->sys_mem, 0, 0xD000, 0x1000, dev->ram + dev->current_bank);
+            mem_map_rom(dev->sys_mem, 0, 0xE000, 0x2000, dev->ram + 0x2000);
         }
     } else {
-        if (dev->state & APPLE2_LC_WRITE) {
-            mem_map_rw(dev->sys_mem, 0, 0xD000, 0x1000, dev->sys_rom, dev->current_bank);
-            mem_map_rw(dev->sys_mem, 0, 0xE000, 0x2000, dev->sys_rom + 0x1000, dev->ram);
+        if (dev->state & APPLE2_LC_WRITE_ENABLED) {
+            mem_map_rw(dev->sys_mem, 0, 0xD000, 0x1000, dev->sys_rom, dev->ram + dev->current_bank);
+            mem_map_rw(dev->sys_mem, 0, 0xE000, 0x2000, dev->sys_rom + 0x1000, dev->ram + 0x2000);
         } else {
             mem_map_rom(dev->sys_mem, 0, 0xD000, 0x3000, dev->sys_rom);
         }

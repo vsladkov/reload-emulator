@@ -1,7 +1,9 @@
 /*
-    apple2.c
+    apple2e.c
 */
 #define CHIPS_IMPL
+#define MEM_PAGE_SHIFT (9U)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,8 +13,9 @@
 #include <pico/platform.h>
 #include "pico/stdlib.h"
 
-#include "roms/apple2_roms.h"
+#include "roms/apple2e_roms.h"
 #include "images/apple2_images.h"
+// #include "images/apple2_nib_images.h"
 
 #include "chips/chips_common.h"
 #include "chips/wdc65C02cpu.h"
@@ -27,7 +30,7 @@
 #include "devices/prodos_hdd.h"
 #include "devices/prodos_hdc.h"
 #include "devices/prodos_hdc_rom.h"
-#include "systems/apple2.h"
+#include "systems/apple2e.h"
 
 #include "hardware/clocks.h"
 #include "hardware/dma.h"
@@ -52,11 +55,11 @@
 
 typedef struct {
     uint32_t version;
-    apple2_t apple2;
-} apple2_snapshot_t;
+    apple2e_t apple2e;
+} apple2e_snapshot_t;
 
 typedef struct {
-    apple2_t apple2;
+    apple2e_t apple2e;
     uint32_t frame_time_us;
     uint32_t ticks;
     // double emu_time_ms;
@@ -70,9 +73,9 @@ static void push_audio(const uint8_t *samples, int num_samples, void *user_data)
     audio_play_once(samples, num_samples);
 }
 
-// get apple2_desc_t struct based on joystick type
-apple2_desc_t apple2_desc(void) {
-    return (apple2_desc_t){
+// get apple2e_desc_t struct based on joystick type
+apple2e_desc_t apple2e_desc(void) {
+    return (apple2e_desc_t){
         .fdc_enabled = false,
         .hdc_enabled = true,
         .audio =
@@ -82,8 +85,8 @@ apple2_desc_t apple2_desc(void) {
             },
         .roms =
             {
-                .rom = {.ptr = apple2_rom, .size = sizeof(apple2_rom)},
-                .character_rom = {.ptr = apple2_character_rom, .size = sizeof(apple2_character_rom)},
+                .rom = {.ptr = apple2e_rom, .size = sizeof(apple2e_rom)},
+                .character_rom = {.ptr = apple2e_character_rom, .size = sizeof(apple2e_character_rom)},
                 .fdc_rom = {.ptr = apple2_fdc_rom, .size = sizeof(apple2_fdc_rom)},
                 .hdc_rom = {.ptr = prodos_hdc_rom, .size = sizeof(prodos_hdc_rom)},
             },
@@ -91,8 +94,8 @@ apple2_desc_t apple2_desc(void) {
 }
 
 void app_init(void) {
-    apple2_desc_t desc = apple2_desc();
-    apple2_init(&state.apple2, &desc);
+    apple2e_desc_t desc = apple2e_desc();
+    apple2e_init(&state.apple2e, &desc);
 }
 
 // TMDS bit clock 400 MHz
@@ -115,7 +118,7 @@ void app_init(void) {
 #define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
 
 // clang-format off
-static const uint32_t apple2_palette[PALETTE_SIZE] = {
+static const uint32_t apple2e_palette[PALETTE_SIZE] = {
     RGBA8(0x00, 0x00, 0x00), /* Black */
     RGBA8(0xA7, 0x0B, 0x4C), /* Dark Red */
     RGBA8(0x40, 0x1C, 0xF7), /* Dark Blue */
@@ -142,13 +145,31 @@ uint8_t __not_in_flash() scanbuf[FRAME_WIDTH];
 
 struct dvi_inst dvi0;
 
-void tmds_palette_init() { tmds_setup_palette24_symbols(apple2_palette, tmds_palette, PALETTE_SIZE); }
+void tmds_palette_init() { tmds_setup_palette24_symbols(apple2e_palette, tmds_palette, PALETTE_SIZE); }
 
-void kbd_raw_key_down(int code) { apple2_key_down(&state.apple2, isascii(code) ? toupper(code) : code); }
+void kbd_raw_key_down(int code) {
+    if (isascii(code)) {
+        if (isupper(code)) {
+            code = tolower(code);
+        } else if (islower(code)) {
+            code = toupper(code);
+        }
+    }
+    apple2e_key_down(&state.apple2e, code);
+}
 
-void kbd_raw_key_up(int code) { apple2_key_up(&state.apple2, isascii(code) ? toupper(code) : code); }
+void kbd_raw_key_up(int code) {
+    if (isascii(code)) {
+        if (isupper(code)) {
+            code = tolower(code);
+        } else if (islower(code)) {
+            code = toupper(code);
+        }
+    }
+    apple2e_key_up(&state.apple2e, code);
+}
 
-extern void apple2_render_scanline(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
+extern void apple2e_render_scanline(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 extern void copy_tmdsbuf(uint32_t *dest, const uint32_t *src);
 
 static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix) {
@@ -168,14 +189,14 @@ static inline void __not_in_flash_func(render_scanline)(const uint32_t *pixbuf, 
     interp_config_set_signed(&c, false);
     interp_set_config(interp0, 1, &c);
 
-    apple2_render_scanline(pixbuf, scanbuf, n_pix);
+    apple2e_render_scanline(pixbuf, scanbuf, n_pix);
 }
 
-#define APPLE2_EMPTY_LINES   ((FRAME_HEIGHT - APPLE2_SCREEN_HEIGHT * 2) / 4)
-#define APPLE2_EMPTY_COLUMNS ((FRAME_WIDTH - APPLE2_SCREEN_WIDTH) / 2)
+#define APPLE2E_EMPTY_LINES   ((FRAME_HEIGHT - APPLE2E_SCREEN_HEIGHT * 2) / 4)
+#define APPLE2E_EMPTY_COLUMNS ((FRAME_WIDTH - APPLE2E_SCREEN_WIDTH) / 2)
 
 static inline void __not_in_flash_func(render_empty_scanlines)() {
-    for (int y = 0; y < APPLE2_EMPTY_LINES; y += 2) {
+    for (int y = 0; y < APPLE2E_EMPTY_LINES; y += 2) {
         uint32_t *tmdsbuf;
         queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
         copy_tmdsbuf(tmdsbuf, empty_tmdsbuf);
@@ -188,17 +209,17 @@ static inline void __not_in_flash_func(render_empty_scanlines)() {
 }
 
 static inline void __not_in_flash_func(render_frame)() {
-    for (int y = 0; y < APPLE2_SCREEN_HEIGHT; y += 2) {
+    for (int y = 0; y < APPLE2E_SCREEN_HEIGHT; y += 2) {
         uint32_t *tmdsbuf;
         queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
-        render_scanline((const uint32_t *)(&state.apple2.fb[y * 280]), (uint32_t *)(&scanbuf[APPLE2_EMPTY_COLUMNS]),
+        render_scanline((const uint32_t *)(&state.apple2e.fb[y * 280]), (uint32_t *)(&scanbuf[APPLE2E_EMPTY_COLUMNS]),
                         280);
         tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
         queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
 
         queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
-        render_scanline((const uint32_t *)(&state.apple2.fb[(y + 1) * 280]),
-                        (uint32_t *)(&scanbuf[APPLE2_EMPTY_COLUMNS]), 280);
+        render_scanline((const uint32_t *)(&state.apple2e.fb[(y + 1) * 280]),
+                        (uint32_t *)(&scanbuf[APPLE2E_EMPTY_COLUMNS]), 280);
         tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
         queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
     }
@@ -220,21 +241,21 @@ void __not_in_flash_func(core1_main()) {
 bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *t) {
     tuh_task();
     audio_mixer_step();
-    apple2_screen_update(&state.apple2);
+    apple2e_screen_update(&state.apple2e);
     return true;
 }
 
 bool __not_in_flash_func(repeating_timer_1khz_callback)(struct repeating_timer *t) {
     // struct timeval tv;
-    // gettimeofday(&tv,NULL);
+    // gettimeofday(&tv, NULL);
     // unsigned long start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
 
-    uint32_t num_ticks = clk_us_to_ticks(APPLE2_FREQUENCY, 1000);
+    uint32_t num_ticks = clk_us_to_ticks(APPLE2E_FREQUENCY, 1000);
     for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
-        apple2_tick(&state.apple2);
+        apple2e_tick(&state.apple2e);
     }
 
-    // gettimeofday(&tv,NULL);
+    // gettimeofday(&tv, NULL);
     // unsigned long end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
     // int execution_time = end_time_in_micros - start_time_in_micros;
     // printf("%d us\n", execution_time);

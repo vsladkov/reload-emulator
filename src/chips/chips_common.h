@@ -30,6 +30,10 @@
 extern "C" {
 #endif
 
+#define CHIPS_DEFAULT(val, def) (((val) != 0) ? (val) : (def))
+
+#define CHIPS_ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 typedef struct {
     void* ptr;
     size_t size;

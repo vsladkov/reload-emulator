@@ -21,6 +21,7 @@
     You need to include the following headers before including oric.h:
 
     - chips/chips_common.h
+    - chips/wdc65C02cpu.h
     - chips/mos6522via.h
     - chips/ay38910psg.h
     - chips/kbd.h
@@ -176,35 +177,6 @@ static void _oric_init_key_map(oric_t* sys);
 #define LATTR_DSIZE (0x02)
 #define LATTR_BLINK (0x04)
 
-#define _ORIC_DEFAULT(val, def) (((val) != 0) ? (val) : (def))
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-#ifdef PICO_NEO6502
-#define _ORIC_GPIO_MASK       (0xFF)
-#define _ORIC_GPIO_SHIFT_BITS (0)
-#define _ORIC_OE1_PIN         (8)
-#define _ORIC_OE2_PIN         (9)
-#define _ORIC_OE3_PIN         (10)
-#define _ORIC_RW_PIN          (11)
-#define _ORIC_CLOCK_PIN       (21)
-#define _ORIC_AUDIO_PIN       (20)
-#define _ORIC_RESET_PIN       (26)
-#define _ORIC_IRQ_PIN         (25)
-#define _ORIC_NMI_PIN         (27)
-#else
-#define _ORIC_GPIO_MASK       (0x3FC)
-#define _ORIC_GPIO_SHIFT_BITS (2)
-#define _ORIC_OE1_PIN         (10)
-#define _ORIC_OE2_PIN         (11)
-#define _ORIC_OE3_PIN         (20)
-#define _ORIC_RW_PIN          (21)
-#define _ORIC_CLOCK_PIN       (22)
-#define _ORIC_AUDIO_PIN       (27)
-#define _ORIC_RESET_PIN       (26)
-#define _ORIC_IRQ_PIN         (28)
-#endif  // PICO_NEO6502
-
 void oric_init(oric_t* sys, const oric_desc_t* desc) {
     CHIPS_ASSERT(sys && desc);
     if (desc->debug.callback.func) {
@@ -215,7 +187,7 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
     sys->valid = true;
     sys->debug = desc->debug;
     sys->audio.callback = desc->audio.callback;
-    sys->audio.num_samples = _ORIC_DEFAULT(desc->audio.num_samples, ORIC_DEFAULT_AUDIO_SAMPLES);
+    sys->audio.num_samples = CHIPS_DEFAULT(desc->audio.num_samples, ORIC_DEFAULT_AUDIO_SAMPLES);
     CHIPS_ASSERT(sys->audio.num_samples <= ORIC_MAX_AUDIO_SAMPLES);
 
     CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x4000));
@@ -225,46 +197,13 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
 
     // sys->pins = m6502_init(&sys->cpu, &(m6502_desc_t){0});
 
-    gpio_init_mask(_ORIC_GPIO_MASK);
-
-    gpio_init(_ORIC_OE1_PIN);  // OE1
-    gpio_set_dir(_ORIC_OE1_PIN, GPIO_OUT);
-    gpio_put(_ORIC_OE1_PIN, 1);
-
-    gpio_init(_ORIC_OE2_PIN);  // OE2
-    gpio_set_dir(_ORIC_OE2_PIN, GPIO_OUT);
-    gpio_put(_ORIC_OE2_PIN, 1);
-
-    gpio_init(_ORIC_OE3_PIN);  // OE3
-    gpio_set_dir(_ORIC_OE3_PIN, GPIO_OUT);
-    gpio_put(_ORIC_OE3_PIN, 1);
-
-    gpio_init(_ORIC_RW_PIN);  // RW
-    gpio_set_dir(_ORIC_RW_PIN, GPIO_IN);
-
-    gpio_init(_ORIC_CLOCK_PIN);  // CLOCK
-    gpio_set_dir(_ORIC_CLOCK_PIN, GPIO_OUT);
-
-    gpio_init(_ORIC_RESET_PIN);  // RESET
-    gpio_set_dir(_ORIC_RESET_PIN, GPIO_OUT);
-
-    gpio_init(_ORIC_IRQ_PIN);  // IRQ
-    gpio_set_dir(_ORIC_IRQ_PIN, GPIO_OUT);
-
-#ifdef PICO_NEO6502
-    gpio_init(_ORIC_NMI_PIN);  // NMI
-    gpio_set_dir(_ORIC_NMI_PIN, GPIO_OUT);
-#endif  // PICO_NEO6502
-
-    gpio_put(_ORIC_RESET_PIN, 0);
-    sleep_ms(1);
-    gpio_put(_ORIC_RESET_PIN, 1);
+    wdc65C02cpu_init();
 
     mos6522via_init(&sys->via);
     ay38910psg_init(&sys->psg, &(ay38910psg_desc_t){.type = AY38910PSG_TYPE_8912,
                                                     .in_cb = _oric_psg_in,
                                                     .out_cb = _oric_psg_out,
-                                                    .magnitude = _ORIC_DEFAULT(desc->audio.volume, 1.0f),
+                                                    .magnitude = CHIPS_DEFAULT(desc->audio.volume, 1.0f),
                                                     .user_data = sys});
 
     // setup memory map and keyboard matrix
@@ -284,7 +223,7 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
     // Optionally setup floppy disk controller
     if (desc->fdc_enabled) {
         disk2_fdc_init(&sys->fdc);
-        if (ARRAY_SIZE(oric_nib_images) > 0) {
+        if (CHIPS_ARRAY_SIZE(oric_nib_images) > 0) {
             disk2_fdd_insert_disk(&sys->fdc.fdd[0], oric_nib_images[0]);
         }
     }
@@ -303,12 +242,7 @@ void oric_discard(oric_t* sys) {
 
 void oric_nmi(oric_t* sys) {
     CHIPS_ASSERT(sys && sys->valid);
-#ifdef PICO_NEO6502
-    // trigger NMI
-    gpio_put(_ORIC_NMI_PIN, 0);
-    sleep_ms(1);
-    gpio_put(_ORIC_NMI_PIN, 1);
-#endif  // PICO_NEO6502
+    wdc65C02cpu_nmi();
 }
 
 void oric_reset(oric_t* sys) {
@@ -321,119 +255,31 @@ void oric_reset(oric_t* sys) {
     if (sys->td.valid) {
         oric_td_reset(&sys->td);
     }
-    // reset cpu
-    gpio_put(_ORIC_RESET_PIN, 0);
-    sleep_ms(1);
-    gpio_put(_ORIC_RESET_PIN, 1);
+    wdc65C02cpu_reset();
 }
 
-static uint16_t _m6502_get_address() {
-    gpio_set_dir_masked(_ORIC_GPIO_MASK, 0);
-
-    gpio_put(_ORIC_OE1_PIN, 0);
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#ifndef PICO_NEO6502
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#endif
-    uint16_t addr = (gpio_get_all() >> _ORIC_GPIO_SHIFT_BITS) & 0xFF;
-    gpio_put(_ORIC_OE1_PIN, 1);
-
-    gpio_put(_ORIC_OE2_PIN, 0);
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#ifndef PICO_NEO6502
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#endif
-    addr |= (gpio_get_all() << (8 - _ORIC_GPIO_SHIFT_BITS)) & 0xFF00;
-    gpio_put(_ORIC_OE2_PIN, 1);
-
-    // printf("get addr: %04x\n", addr);
-
-    return addr;
-}
-
-static uint8_t _m6502_get_data() {
-    gpio_set_dir_masked(_ORIC_GPIO_MASK, 0);
-
-    gpio_put(_ORIC_OE3_PIN, 0);
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#ifndef PICO_NEO6502
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#endif
-    uint8_t data = (gpio_get_all() >> _ORIC_GPIO_SHIFT_BITS) & 0xFF;
-    gpio_put(_ORIC_OE3_PIN, 1);
-
-    // printf("get data: %02x\n", data);
-
-    return data;
-}
-
-static void _m6502_set_data(uint8_t data) {
-    gpio_set_dir_masked(_ORIC_GPIO_MASK, _ORIC_GPIO_MASK);
-
-    gpio_put_masked(_ORIC_GPIO_MASK, data << _ORIC_GPIO_SHIFT_BITS);
-    gpio_put(_ORIC_OE3_PIN, 0);
-#ifndef PICO_NEO6502
-    __asm volatile("nop\n");
-    __asm volatile("nop\n");
-#endif
-    gpio_put(_ORIC_OE3_PIN, 1);
-
-    // printf("set data: %02x\n", data);
-}
-
-static uint8_t _last_motor_state = 0;
-
-void oric_tick(oric_t* sys) {
-    gpio_put(_ORIC_CLOCK_PIN, 0);
-
-    uint16_t addr = _m6502_get_address();
-
-    bool rw = gpio_get(_ORIC_RW_PIN);
-
-    gpio_put(_ORIC_CLOCK_PIN, 1);
-
+static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
     if ((addr >= 0x0300) && (addr <= 0x03FF)) {
         // Memory-mapped IO area
         if ((addr >= 0x0300) && (addr <= 0x030F)) {
             if (rw) {
-                _m6502_set_data(mos6522via_read(&sys->via, addr & 0xF));
+                wdc65C02cpu_set_data(mos6522via_read(&sys->via, addr & 0xF));
             } else {
-                mos6522via_write(&sys->via, addr & 0xF, _m6502_get_data());
+                mos6522via_write(&sys->via, addr & 0xF, wdc65C02cpu_get_data());
             }
         } else if ((addr >= 0x0310) && (addr <= 0x031F)) {
             if (sys->fdc.valid) {
                 // Disk II FDC
                 if (rw) {
                     // Memory read
-                    _m6502_set_data(disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
+                    wdc65C02cpu_set_data(disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
                 } else {
                     // Memory write
-                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, _m6502_get_data());
+                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, wdc65C02cpu_get_data());
                 }
             } else {
                 if (rw) {
-                    _m6502_set_data(0x00);
+                    wdc65C02cpu_set_data(0x00);
                 }
             }
         } else if ((addr >= 0x0320) && (addr <= 0x03FF)) {
@@ -441,7 +287,7 @@ void oric_tick(oric_t* sys) {
                 // Disk II boot rom
                 if (rw) {
                     // Memory read
-                    _m6502_set_data(sys->boot_rom[(addr & 0xFF) + sys->extension]);
+                    wdc65C02cpu_set_data(sys->boot_rom[(addr & 0xFF) + sys->extension]);
                 } else {
                     // Memory write
                     switch (addr) {
@@ -471,7 +317,7 @@ void oric_tick(oric_t* sys) {
                 }
             } else {
                 if (rw) {
-                    _m6502_set_data(0x00);
+                    wdc65C02cpu_set_data(0x00);
                 }
             }
         }
@@ -479,16 +325,27 @@ void oric_tick(oric_t* sys) {
         // Regular memory access
         if (rw) {
             // Memory read
-            _m6502_set_data(mem_rd(&sys->mem, addr));
+            wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
         } else {
             // Memory write
-            mem_wr(&sys->mem, addr, _m6502_get_data());
+            mem_wr(&sys->mem, addr, wdc65C02cpu_get_data());
 
             if (addr >= 0x9800 && addr <= 0xBFDF) {
                 sys->screen_dirty = true;
             }
         }
     }
+}
+
+static uint8_t _last_motor_state = 0;
+
+void oric_tick(oric_t* sys) {
+    uint16_t addr;
+    bool rw;
+
+    wdc65C02cpu_tick(&addr, &rw);
+
+    _oric_mem_rw(sys, addr, rw);
 
     // Tick PSG
     if ((sys->system_ticks & 63) == 0) {
@@ -523,7 +380,7 @@ void oric_tick(oric_t* sys) {
 
     // Tick VIA
     if ((sys->system_ticks & 3) == 0) {
-        gpio_put(_ORIC_IRQ_PIN, mos6522via_tick(&sys->via, 4) ? 0 : 1);
+        wdc65C02cpu_set_irq(mos6522via_tick(&sys->via, 4));
 
         // Update PSG state
         if (mos6522via_get_cb2(&sys->via)) {
@@ -605,7 +462,7 @@ void oric_screen_update(oric_t* sys) {
     }
 
     bool blink_state = sys->blink_counter & 0x20;
-    sys->blink_counter = (sys->blink_counter + 1) & 0x3f;
+    sys->blink_counter = (sys->blink_counter + 1) & 0x3F;
 
     uint8_t pattr = sys->pattr;
 
@@ -621,22 +478,22 @@ void oric_screen_update(oric_t* sys) {
             // Lookup the byte and, if needed, the pattern data
             uint8_t ch, pat;
             if ((pattr & PATTR_HIRES) && y < 200)
-                ch = pat = sys->ram[0xa000 + y * 40 + x];
+                ch = pat = sys->ram[0xA000 + y * 40 + x];
 
             else {
-                ch = sys->ram[0xbb80 + (y >> 3) * 40 + x];
+                ch = sys->ram[0xBB80 + (y >> 3) * 40 + x];
                 int off = (lattr & LATTR_DSIZE ? y >> 1 : y) & 7;
                 const uint8_t* base;
                 if (pattr & PATTR_HIRES)
                     if (lattr & LATTR_ALT)
-                        base = sys->ram + 0x9c00;
+                        base = sys->ram + 0x9C00;
                     else
                         base = sys->ram + 0x9800;
                 else if (lattr & LATTR_ALT)
-                    base = sys->ram + 0xb800;
+                    base = sys->ram + 0xB800;
                 else
-                    base = sys->ram + 0xb400;
-                pat = base[((ch & 0x7f) << 3) | off];
+                    base = sys->ram + 0xB400;
+                pat = base[((ch & 0x7F) << 3) | off];
             }
 
             // Handle state-chaging attributes
@@ -793,14 +650,14 @@ void oric_key_down(oric_t* sys, int key_code) {
         case 0x142:  // F9
         {
             uint8_t index = key_code - 0x13A;
-            int num_nib_images = ARRAY_SIZE(oric_nib_images);
+            int num_nib_images = CHIPS_ARRAY_SIZE(oric_nib_images);
             if (index < num_nib_images) {
                 if (sys->fdc.valid) {
                     disk2_fdd_insert_disk(&sys->fdc.fdd[0], oric_nib_images[index]);
                 }
             } else {
                 index -= num_nib_images;
-                if (index < ARRAY_SIZE(oric_wave_images)) {
+                if (index < CHIPS_ARRAY_SIZE(oric_wave_images)) {
                     if (sys->td.valid) {
                         oric_td_insert_tape(&sys->td, oric_wave_images[index]);
                     }
