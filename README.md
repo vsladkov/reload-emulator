@@ -3,9 +3,9 @@ Reload - Portable Retro Computers Emulator
 
 Supported machines:
 
-Apple //e
-Apple ][+
-Oric Atmos
+- Apple //e
+- Apple ][+
+- Oric Atmos
 
 ## Requirements
 ### Tools
