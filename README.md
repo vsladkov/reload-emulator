@@ -1,5 +1,4 @@
-# reload-emulator
-Reload - Portable Retro Computers Emulator
+# Reload - Portable Retro Computers Emulator
 
 Supported machines:
 
