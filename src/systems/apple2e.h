@@ -994,7 +994,7 @@ void apple2e_key_up(apple2e_t *sys, int key_code) {
         default:
             break;
     }
-    // printf("key down: %d\n", key_code);
+    // printf("key up: %d\n", key_code);
 }
 
 uint32_t apple2e_save_snapshot(apple2e_t *sys, apple2e_t *dst) {

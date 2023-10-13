@@ -156,6 +156,7 @@ uint16_t wdc65C02cpu_get_address() {
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
+    __asm volatile("nop\n");
 #ifndef PICO_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -166,6 +167,7 @@ uint16_t wdc65C02cpu_get_address() {
     gpio_put(_OE1_PIN, 1);
 
     gpio_put(_OE2_PIN, 0);
+    __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -189,6 +191,7 @@ uint8_t wdc65C02cpu_get_data() {
     gpio_set_dir_masked(_GPIO_MASK, 0);
 
     gpio_put(_OE3_PIN, 0);
+    __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");

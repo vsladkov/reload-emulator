@@ -66,7 +66,7 @@ decl_func apple2e_render_scanline
 decl_func copy_tmdsbuf
 	push {r2-r7, lr}
 
-.rept 160
+.rept 200
 	ldmia r1!, {r2, r3, r4, r5, r6, r7}
 	stmia r0!, {r2, r3, r4, r5, r6, r7}
 .endr
