@@ -693,8 +693,7 @@ static void _apple2_text_update(apple2_t *sys, uint16_t begin_row, uint16_t end_
         uint16_t words[40];
 
         for (int col = 0; col < 40; col++) {
-            uint16_t word = _apple2_double_7_bits(_apple2_get_text_character(sys, vram_row[col], row & 7));
-            words[col] = word;
+            words[col] = _apple2_double_7_bits(_apple2_get_text_character(sys, vram_row[col], row & 7));
         }
 
         _apple2_render_line_monochrome(_apple2_get_fb_addr(sys, row), words, 0, 40);
@@ -723,12 +722,12 @@ static void _apple2_hgr_update(apple2_t *sys, uint16_t begin_row, uint16_t end_r
         uint16_t last_output_bit = 0;
 
         for (int col = 0; col < 40; col++) {
-            uint16_t word = _apple2_double_7_bits(vram_row[col] & 0x7F);
+            uint16_t w = _apple2_double_7_bits(vram_row[col] & 0x7F);
             if (vram_row[col] & 0x80) {
-                word = (word * 2 + last_output_bit) & 0x3FFF;
+                w = (w << 1 | last_output_bit) & 0x3FFF;
             };
-            words[col] = word;
-            last_output_bit = word >> 13;
+            words[col] = w;
+            last_output_bit = w >> 13;
         }
 
         _apple2_render_line_color(_apple2_get_fb_addr(sys, row), words, 0, 40);
