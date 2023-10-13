@@ -120,8 +120,6 @@ typedef struct {
     uint8_t *fdc_rom;
     uint8_t *hdc_rom;
 
-    // apple2e_lc_t lc;  // Language card
-
     bool text;
     bool mixed;
     bool page2;
@@ -138,7 +136,9 @@ typedef struct {
     bool slotc3rom;
 
     bool lcram, lcbnk2, prewrite, write_enabled;
+
     bool ioudis;
+    bool vbl;
 
     uint32_t flash_timer_ticks;
 
@@ -159,6 +159,7 @@ typedef struct {
     bool solid_apple_pressed;
 
     uint32_t system_ticks;
+    uint16_t vbl_ticks;
 } apple2e_t;
 
 // Apple2e interface
@@ -536,8 +537,8 @@ static void _apple2e_mem_c010_c01f_r(apple2e_t *sys, uint16_t addr) {
             data = sys->_80store ? 0x80 : 0x00;
             break;
 
-        case 0x19:  // read VBLBAR
-            data = 0x00;
+        case 0x19:  // read VBL
+            data = sys->vbl ? 0x80 : 0x00;
             break;
 
         case 0x1A:  // read TEXT
@@ -772,6 +773,17 @@ static void _apple2e_mem_rw(apple2e_t *sys, uint16_t addr, bool rw) {
 }
 
 void apple2e_tick(apple2e_t *sys) {
+    if (sys->vbl_ticks == 12480) {
+        sys->vbl = true;
+    }
+
+    if (sys->vbl_ticks < 17030) {
+        sys->vbl_ticks++;
+    } else {
+        sys->vbl_ticks = 0;
+        sys->vbl = false;
+    }
+
     uint16_t addr;
     bool rw;
 
