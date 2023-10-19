@@ -83,9 +83,10 @@ extern "C" {
 
 // Config parameters for apple2_init()
 typedef struct {
-    bool fdc_enabled;     // Set to true to enable floppy disk controller emulation
-    bool hdc_enabled;     // Set to true to enable hard disk controller emulation
-    chips_debug_t debug;  // Optional debugging hook
+    bool fdc_enabled;         // Set to true to enable floppy disk controller emulation
+    bool hdc_enabled;         // Set to true to enable hard disk controller emulation
+    bool hdc_internal_flash;  // Set to true to use internal flash
+    chips_debug_t debug;      // Optional debugging hook
     chips_audio_desc_t audio;
     struct {
         chips_range_t rom;
@@ -194,6 +195,8 @@ static uint8_t __not_in_flash() _apple2_artifact_color_lut[1<<7] = {
 };
 // clang-format on
 
+extern bool msc_inquiry_complete;
+
 void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     CHIPS_ASSERT(sys && desc);
     if (desc->debug.callback.func) {
@@ -246,8 +249,18 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     // Optionally setup hard disk controller
     if (desc->hdc_enabled) {
         prodos_hdc_init(&sys->hdc);
-        if (CHIPS_ARRAY_SIZE(apple2_po_images) > 0) {
-            prodos_hdd_insert_disk(&sys->hdc.hdd[0], apple2_po_images[0], apple2_po_image_sizes[0]);
+        if (desc->hdc_internal_flash) {
+            if (CHIPS_ARRAY_SIZE(apple2_po_images) > 0) {
+                prodos_hdd_insert_disk_internal(&sys->hdc.hdd[0], apple2_po_images[0], apple2_po_image_sizes[0]);
+            }
+        } else {
+            while (!msc_inquiry_complete) {
+                tuh_task();
+                sleep_us(1000);
+            }
+            if (CHIPS_ARRAY_SIZE(apple2_msc_images) > 0) {
+                prodos_hdd_insert_disk_msc(&sys->hdc.hdd[0], apple2_msc_images[0]);
+            }
         }
     }
 }

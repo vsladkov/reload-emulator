@@ -5,14 +5,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <ctype.h>
+#include <sys/time.h>
 
 #include <pico/platform.h>
 #include "pico/stdlib.h"
 
 #include "roms/apple2_roms.h"
 #include "images/apple2_images.h"
+// #include "images/apple2_nib_images.h"
+
+#include "tusb.h"
+#include "ff.h"
 
 #include "chips/chips_common.h"
 #include "chips/wdc65C02cpu.h"
@@ -48,8 +52,6 @@
 
 #include "audio.h"
 
-#include "tusb.h"
-
 typedef struct {
     uint32_t version;
     apple2_t apple2;
@@ -75,6 +77,7 @@ apple2_desc_t apple2_desc(void) {
     return (apple2_desc_t){
         .fdc_enabled = false,
         .hdc_enabled = true,
+        .hdc_internal_flash = false,
         .audio =
             {
                 .callback = {.func = push_audio},
@@ -218,27 +221,8 @@ void __not_in_flash_func(core1_main()) {
 }
 
 bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *t) {
-    tuh_task();
     audio_mixer_step();
     apple2_screen_update(&state.apple2);
-    return true;
-}
-
-bool __not_in_flash_func(repeating_timer_1khz_callback)(struct repeating_timer *t) {
-    // struct timeval tv;
-    // gettimeofday(&tv,NULL);
-    // unsigned long start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
-
-    uint32_t num_ticks = clk_us_to_ticks(APPLE2_FREQUENCY, 1000);
-    for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
-        apple2_tick(&state.apple2);
-    }
-
-    // gettimeofday(&tv,NULL);
-    // unsigned long end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
-    // int execution_time = end_time_in_micros - start_time_in_micros;
-    // printf("%d us\n", execution_time);
-
     return true;
 }
 
@@ -248,10 +232,8 @@ int main() {
     set_sys_clock_khz(DVI_TIMING.bit_clk_khz, true);
 
     stdio_init_all();
-
-    app_init();
-    tmds_palette_init();
     tusb_init();
+
     audio_init(_AUDIO_PIN, 22050);
 
     printf("Configuring DVI\n");
@@ -260,18 +242,40 @@ int main() {
     dvi0.ser_cfg = DVI_DEFAULT_SERIAL_CONFIG;
     dvi_init(&dvi0, next_striped_spin_lock_num(), next_striped_spin_lock_num());
 
+    tmds_palette_init();
     tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, empty_tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
 
     printf("Core 1 start\n");
     hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
     multicore_launch_core1(core1_main);
 
+    app_init();
+
     struct repeating_timer timer_20hz;
     add_repeating_timer_us(-50000, repeating_timer_20hz_callback, NULL, &timer_20hz);
 
-    struct repeating_timer timer_1khz;
-    add_repeating_timer_us(-1000, repeating_timer_1khz_callback, NULL, &timer_1khz);
+    while (1) {
+        tuh_task();
 
-    while (1) __wfe();
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        uint64_t start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+
+        uint32_t num_ticks = clk_us_to_ticks(APPLE2_FREQUENCY, 1000);
+        for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
+            apple2_tick(&state.apple2);
+        }
+
+        gettimeofday(&tv, NULL);
+        uint64_t end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+        uint32_t execution_time = end_time_in_micros - start_time_in_micros;
+        // printf("%d us\n", execution_time);
+
+        int sleep_time = 1000 - execution_time;
+        if (sleep_time > 0) {
+            sleep_us(sleep_time);
+        }
+    }
+
     __builtin_unreachable();
 }

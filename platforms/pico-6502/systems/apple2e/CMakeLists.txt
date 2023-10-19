@@ -6,11 +6,12 @@ add_executable(apple2e
 	${CMAKE_CURRENT_SOURCE_DIR}/src/apple2e.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.S
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/hid_app.c
+	${CMAKE_CURRENT_SOURCE_DIR}/../../src/msc_app.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/audio.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/utils.S
 )
 
-target_compile_options(apple2 PRIVATE -Wall)
+target_compile_options(apple2e PRIVATE -Wall)
 
 target_compile_definitions(apple2e PRIVATE
 	# DVI_DEFAULT_SERIAL_CONFIG=pico_sock_cfg
@@ -24,6 +25,7 @@ target_link_libraries(apple2e
 	pico_util
 	libdvi
 	tinyusb_host
+	fatfs
 )
 
 # create map/bin/hex file etc.

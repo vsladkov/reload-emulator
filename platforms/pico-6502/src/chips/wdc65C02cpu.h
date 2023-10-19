@@ -119,20 +119,20 @@ void wdc65C02cpu_init() {
 #endif  // PICO_NEO6502
 
     gpio_put(_RESET_PIN, 0);
-    sleep_ms(1);
+    sleep_us(1000);
     gpio_put(_RESET_PIN, 1);
 }
 
 void wdc65C02cpu_reset() {
     gpio_put(_RESET_PIN, 0);
-    sleep_ms(1);
+    sleep_us(1000);
     gpio_put(_RESET_PIN, 1);
 }
 
 void wdc65C02cpu_nmi() {
 #ifdef PICO_NEO6502
     gpio_put(_NMI_PIN, 0);
-    sleep_ms(1);
+    sleep_us(1000);
     gpio_put(_NMI_PIN, 1);
 #endif  // PICO_NEO6502
 }

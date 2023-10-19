@@ -16,9 +16,11 @@ add_compile_options(-Wall)
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/lib/PicoDVI/software/include
+	${CMAKE_CURRENT_SOURCE_DIR}/lib/fatfs/source
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	)
 
 add_subdirectory(lib/PicoDVI/software/libdvi)
+add_subdirectory(lib/fatfs/source)
 add_subdirectory(systems)
