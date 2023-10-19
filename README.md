@@ -56,6 +56,8 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
+### UPDATE: Apple //e and Apple ][+ emulators now support USB flash drives with FAT and ExFAT file systems.
+
 Apple //e and Apple ][+ emulators are working with embedded ProDOS images and NIB images as C headers.
 
 Oric emulator is working with embedded NIB and WAVE images as C headers.
