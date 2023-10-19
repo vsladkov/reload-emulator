@@ -95,6 +95,10 @@ uint32_t apple2_po_image_sizes[] = {
     sizeof(neo6502_po_image),
 };
 
+char* apple2_msc_images[] = {
+    "Total Replay v5.0.hdv",
+};
+
 ```
 
 Building headers from TAP file (Oric):
