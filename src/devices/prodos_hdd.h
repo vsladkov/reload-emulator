@@ -147,13 +147,13 @@ uint8_t prodos_hdd_read_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block
         FRESULT res;
         res = f_lseek(&sys->fil, block * PRODOS_HDD_BYTES_PER_BLOCK);
         if (res != FR_OK) {
-            printf("Error %u seeking file\r\n", res);
+            printf("Error %u reading from file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
         UINT nread = sizeof(buf);
         res = f_read(&sys->fil, buf, sizeof(buf), &nread);
         if (res != FR_OK) {
-            printf("Error %u reading file\r\n", res);
+            printf("Error %u reading from file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
         mem_write_range(mem, buffer, buf, PRODOS_HDD_BYTES_PER_BLOCK);
@@ -181,13 +181,13 @@ uint8_t prodos_hdd_write_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t bloc
         FRESULT res;
         res = f_lseek(&sys->fil, block * PRODOS_HDD_BYTES_PER_BLOCK);
         if (res != FR_OK) {
-            printf("Error %u seeking file\r\n", res);
+            printf("Error %u writing to file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
         UINT nwritten = sizeof(buf);
         res = f_write(&sys->fil, buf, sizeof(buf), &nwritten);
         if (res != FR_OK) {
-            printf("error %u writing file\r\n", res);
+            printf("Error %u writing to file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
     }
