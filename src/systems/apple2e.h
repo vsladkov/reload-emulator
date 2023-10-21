@@ -739,30 +739,32 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
 }
 
 static void _apple2e_mem_rw(apple2e_t *sys, uint16_t addr, bool rw) {
-    if ((addr >= 0xC000) && (addr <= 0xC0FF)) {
-        // Apple //e I/O Page
-        _apple2e_mem_c000_c0ff_rw(sys, addr, rw);
-    } else if ((addr >= 0xC300) && (addr <= 0xC3FF) && !sys->intcxrom) {
-        if (rw) {
-            // Memory read
-            wdc65C02cpu_set_data(sys->slotc3rom ? 0x00 : mem_rd(&sys->mem, addr));
-        }
-    } else if ((addr >= 0xC600) && (addr <= 0xC6FF) && !sys->intcxrom) {
-        // Disk II boot rom
-        if (rw) {
-            // Memory read
-            wdc65C02cpu_set_data(sys->fdc.valid ? sys->fdc_rom[addr & 0xFF] : 0x00);
-        }
-    } else if ((addr >= 0xC700) && (addr <= 0xC7FF) && !sys->intcxrom) {
-        // Hard disk boot rom
-        if (rw) {
-            // Memory read
-            wdc65C02cpu_set_data(sys->hdc.valid ? sys->hdc_rom[addr & 0xFF] : 0x00);
-        }
-    } else if ((addr >= 0xC100) && (addr <= 0xCFFF) && sys->intcxrom) {
-        if (rw) {
-            // Memory read
-            wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
+    if ((addr >= 0xC000) && (addr <= 0xCFFF)) {
+        if ((addr >= 0xC000) && (addr <= 0xC0FF)) {
+            // Apple //e I/O Page
+            _apple2e_mem_c000_c0ff_rw(sys, addr, rw);
+        } else if ((addr >= 0xC300) && (addr <= 0xC3FF) && !sys->intcxrom) {
+            if (rw) {
+                // Memory read
+                wdc65C02cpu_set_data(sys->slotc3rom ? 0x00 : mem_rd(&sys->mem, addr));
+            }
+        } else if ((addr >= 0xC600) && (addr <= 0xC6FF) && !sys->intcxrom) {
+            // Disk II boot rom
+            if (rw) {
+                // Memory read
+                wdc65C02cpu_set_data(sys->fdc.valid ? sys->fdc_rom[addr & 0xFF] : 0x00);
+            }
+        } else if ((addr >= 0xC700) && (addr <= 0xC7FF) && !sys->intcxrom) {
+            // Hard disk boot rom
+            if (rw) {
+                // Memory read
+                wdc65C02cpu_set_data(sys->hdc.valid ? sys->hdc_rom[addr & 0xFF] : 0x00);
+            }
+        } else if ((addr >= 0xC100) && (addr <= 0xCFFF)) {
+            if (rw) {
+                // Memory read
+                wdc65C02cpu_set_data( sys->intcxrom ? mem_rd(&sys->mem, addr) : 0x00);
+            }
         }
     } else {
         // Regular memory access

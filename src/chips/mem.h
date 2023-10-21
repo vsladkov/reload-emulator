@@ -121,7 +121,7 @@ extern "C" {
 #define MEM_PAGE_MASK  (MEM_PAGE_SIZE - 1)
 
 #define MEM_NUM_PAGES  (MEM_ADDR_RANGE / MEM_PAGE_SIZE)
-#define MEM_NUM_LAYERS (4U)
+#define MEM_NUM_LAYERS (1U)
 
 /* a memory page item maps a chunk of emulator memory to host memory */
 typedef struct {
