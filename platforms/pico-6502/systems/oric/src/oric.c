@@ -81,7 +81,7 @@ oric_desc_t oric_desc(void) {
         .roms =
             {
                 .rom = {.ptr = oric_rom, .size = sizeof(oric_rom)},
-                .boot_rom = {.ptr = oric_boot_rom, .size = sizeof(oric_boot_rom)},
+                .boot_rom = {.ptr = oric_fdc_rom, .size = sizeof(oric_fdc_rom)},
             },
     };
 }

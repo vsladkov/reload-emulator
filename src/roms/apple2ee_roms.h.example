@@ -1,0 +1,22 @@
+#pragma once
+
+// clang-format off
+uint8_t __in_flash() apple2e_rom[] = {
+	// Put the content of your ROM here
+	//
+    // MD5 (342-0304-a.e10) = 6b11018a14668a7e3904319d2097dddc
+    // MD5 (342-0303-a.e8) = 6ac9338f6972eea01604f90d9a581f18
+};
+
+uint8_t __in_flash() apple2e_character_rom[] = {
+	// Put the content of your character ROM here
+	//
+    // MD5 (342-0265-a.chr) = 9123fff3442c0e688cc6816be88dd4ab
+};
+
+uint8_t __in_flash() apple2e_keyboard_rom[] = {
+	// Put the content of your keyboard ROM here
+	//
+	// MD5 (341-0132-d.e12) = b956c537e7b6b85ffa5c3493b1490d8a
+};
+// clang-format off

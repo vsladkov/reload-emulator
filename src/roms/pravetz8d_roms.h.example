@@ -1,0 +1,9 @@
+#pragma once
+
+// clang-format off
+uint8_t __not_in_flash() oric_rom[] = {
+    // Put the content of your ROM here
+    //
+    // MD5 (pravetzt.rom) = 8712a22e7e078de3343667d9fc1f2390
+};
+// clang-format on

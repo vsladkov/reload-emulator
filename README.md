@@ -1,6 +1,6 @@
 # Reload - Portable Retro Computers Emulator
 
-Supported machines:
+Emulated systems:
 
 ### Apple //e
   - 128 KB RAM installed 
@@ -50,7 +50,7 @@ find . -type f -name "*.uf2" -ls
 ## Building firmware
 Original firmware is not distributed with emulator sources. Please, make sure you have the proper license to use and build the headers from your own binaries.
 
-The structure of the header files is described in roms/roms_md5.txt file together with file names and MD5 checksums.
+Example header files for each system are included, together with ROM file names and MD5 checksums.
 
 You can use bin2hdr tool to generate firmware header files. Please, make sure MD5 checksums are identical.
 
