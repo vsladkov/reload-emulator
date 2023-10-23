@@ -763,7 +763,7 @@ static void _apple2e_mem_rw(apple2e_t *sys, uint16_t addr, bool rw) {
         } else if ((addr >= 0xC100) && (addr <= 0xCFFF)) {
             if (rw) {
                 // Memory read
-                wdc65C02cpu_set_data( sys->intcxrom ? mem_rd(&sys->mem, addr) : 0x00);
+                wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
             }
         }
     } else {
