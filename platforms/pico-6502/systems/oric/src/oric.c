@@ -289,6 +289,8 @@ int main() {
         if (sleep_time > 0) {
             sleep_us(sleep_time);
         }
+
+        kbd_update(&state.oric.kbd, 1000);
     }
 
     __builtin_unreachable();
