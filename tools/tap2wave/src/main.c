@@ -20,7 +20,7 @@ static uint8_t _current_level;
 static uint8_t _shifter;
 static uint8_t _shift_count;
 
-void _flush_output() {
+static void _flush_output() {
     for (int i = 0; i < 8 - _shift_count; i++) {
         _shifter = (_shifter << 1) | 1;
     }

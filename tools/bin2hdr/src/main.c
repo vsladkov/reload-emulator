@@ -45,7 +45,7 @@ static void print_file(FILE* in, FILE* out, const char* array_name) {
     fprintf(out, "// clang-format off\n");
 }
 
-void convert_bin_to_hdr(const char* infile, const char* outfile, const char* array_name) {
+static void convert_bin_to_hdr(const char* infile, const char* outfile, const char* array_name) {
     FILE *in, *out;
 
     in = fopen(infile, "rb");

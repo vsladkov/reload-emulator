@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +62,13 @@ static uint8_t phys_interleave[SECTORS_PER_TRACK] =
     {0, 0xD, 0xB, 9, 7, 5, 3, 1, 0xE, 0xC, 0xA, 8, 6, 4, 2, 0xF};
 // clang-format on
 
+// clang-format off
+static uint8_t soft_interleave_po[SECTORS_PER_TRACK] = 
+    {0, 8, 1, 9, 2, 0xA, 3, 0xB, 4, 0xC, 5, 0xD, 6, 0xE, 7, 0xF};
+static uint8_t phys_interleave_po[SECTORS_PER_TRACK] = 
+    {0, 2, 4, 6, 8, 0xA, 0xC, 0xE, 1, 3, 5, 7, 9, 0xB, 0xD, 0xF};
+// clang-format on
+
 static uint8_t primary_buf[PRIMARY_BUF_LEN];
 static uint8_t secondary_buf[SECONDARY_BUF_LEN];
 
@@ -68,6 +76,8 @@ static nib_sector_t nib_sector;
 
 static uint8_t dsk_image[DSK_IMAGE_SIZE];
 static uint8_t nib_image[NIB_IMAGE_SIZE];
+
+static bool prodos_order = false;
 
 // Do "6 and 2" un-translation
 #define TABLE_SIZE 0x40
@@ -166,8 +176,8 @@ static void convert_dsk_to_nib(const char* dsk_file, const char* nib_file) {
     for (int track = 0; track < TRACKS_PER_DISK; track++) {
         // Loop through DSK sectors
         for (int sector = 0; sector < SECTORS_PER_TRACK; sector++) {
-            int soft_sector = soft_interleave[sector];
-            int phys_sector = phys_interleave[sector];
+            int soft_sector = prodos_order ? soft_interleave_po[sector] : soft_interleave[sector];
+            int phys_sector = prodos_order ? phys_interleave_po[sector] : phys_interleave[sector];
 
             // Set ADDR field contents
             int checksum = volume ^ track ^ sector;
@@ -195,7 +205,7 @@ static void convert_dsk_to_nib(const char* dsk_file, const char* nib_file) {
 
 static void print_usage(const char* argv0) {
     fprintf(stderr,
-            "Usage: %s [-i DSK_file] [-o NIB_file]\n"
+            "Usage: %s [-i DSK_file] [-o NIB_file] [-p]\n"
             "\t-h show this help\n",
             argv0);
     exit(1);
@@ -205,13 +215,16 @@ int main(int argc, char* const argv[]) {
     char *infile = NULL, *outfile = NULL;
     int opt;
 
-    while ((opt = getopt(argc, argv, "i:o:h")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:p:h")) != -1) {
         switch (opt) {
             case 'i':
                 infile = strdup(optarg);
                 break;
             case 'o':
                 outfile = strdup(optarg);
+                break;
+            case 'p':
+                prodos_order = true;
                 break;
             case 'h':
             default:
