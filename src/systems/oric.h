@@ -101,12 +101,7 @@ typedef struct {
     bool valid;
     chips_debug_t debug;
 
-    struct {
-        chips_audio_callback_t callback;
-        int num_samples;
-        int sample_pos;
-        uint8_t sample_buffer[ORIC_MAX_AUDIO_SAMPLES];
-    } audio;
+    chips_audio_callback_t audio_callback;
 
     uint8_t ram[0xC000];
     uint8_t overlay_ram[0x4000];
@@ -186,9 +181,7 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
     memset(sys, 0, sizeof(oric_t));
     sys->valid = true;
     sys->debug = desc->debug;
-    sys->audio.callback = desc->audio.callback;
-    sys->audio.num_samples = CHIPS_DEFAULT(desc->audio.num_samples, ORIC_DEFAULT_AUDIO_SAMPLES);
-    CHIPS_ASSERT(sys->audio.num_samples <= ORIC_MAX_AUDIO_SAMPLES);
+    sys->audio_callback = desc->audio.callback;
 
     CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x4000));
     CHIPS_ASSERT(desc->roms.boot_rom.ptr && (desc->roms.boot_rom.size == 0x200));
@@ -360,15 +353,9 @@ void oric_tick(oric_t* sys) {
     t1++;
     if (t1 == 46) {
         ay38910psg_tick_sample_generator(&sys->psg);
-        // sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)((sys->psg.sample * 0.5f + 0.5f) * 255.0f);
-        sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)(sys->psg.sample * 255.0f);
-        if (sys->audio.sample_pos == sys->audio.num_samples) {
-            if (sys->audio.callback.func) {
-                // New sample packet is ready
-                sys->audio.callback.func(sys->audio.sample_buffer, sys->audio.num_samples,
-                                         sys->audio.callback.user_data);
-            }
-            sys->audio.sample_pos = 0;
+        if (sys->audio_callback.func) {
+            // New sample is ready
+            sys->audio_callback.func((uint8_t)((uint8_t)(sys->psg.sample * 255.0f)), sys->audio_callback.user_data);
         }
         t1 = 0;
     }
@@ -689,7 +676,7 @@ uint32_t oric_save_snapshot(oric_t* sys, oric_t* dst) {
     CHIPS_ASSERT(sys && dst);
     *dst = *sys;
     chips_debug_snapshot_onsave(&dst->debug);
-    chips_audio_callback_snapshot_onsave(&dst->audio.callback);
+    chips_audio_callback_snapshot_onsave(&dst->audio_callback);
     // m6502_snapshot_onsave(&dst->cpu);
     ay38910psg_snapshot_onsave(&dst->psg);
     oric_td_snapshot_onsave(&dst->td);
@@ -706,7 +693,7 @@ bool oric_load_snapshot(oric_t* sys, uint32_t version, oric_t* src) {
     static oric_t im;
     im = *src;
     chips_debug_snapshot_onload(&im.debug, &sys->debug);
-    chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
+    chips_audio_callback_snapshot_onload(&im.audio_callback, &sys->audio_callback);
     // m6502_snapshot_onload(&im.cpu, &sys->cpu);
     ay38910psg_snapshot_onload(&im.psg, &sys->psg);
     oric_td_snapshot_onload(&im.td, &sys->td);

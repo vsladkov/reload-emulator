@@ -16,28 +16,46 @@ static uint32_t single_sample = 0;
 static uint32_t *single_sample_ptr = &single_sample;
 static int pwm_dma_chan, trigger_dma_chan, sample_dma_chan;
 
-static uint8_t audio_buffers[2][AUDIO_BUFFER_SIZE];
-static volatile int cur_audio_buffer;
-static volatile int last_audio_buffer;
+typedef struct {
+    uint8_t samples[AUDIO_BUFFER_SIZE];
+    uint8_t empty_samples[AUDIO_CHUNK_SIZE];
+    uint16_t head;
+    uint16_t tail;
+    uint16_t size;
+} audio_buffer_t;
 
-struct MIXER_SOURCE {
-    const unsigned char *samples;
-    int len;
-    int loop_start;
-    int pos;
-    bool active;
-    bool loop;
-    uint16_t volume;  // 8.8 fixed point
-};
+static audio_buffer_t __not_in_flash() audio_buffer;
 
-static struct MIXER_SOURCE mixer_sources[AUDIO_MAX_SOURCES];
-static int16_t mixer_buffer[AUDIO_BUFFER_SIZE];
+static void audio_buffer_init(audio_buffer_t *audio_buffer) {
+    memset(audio_buffer->samples, 0, AUDIO_BUFFER_SIZE);
+    audio_buffer->head = 0;
+    audio_buffer->tail = 0;
+    audio_buffer->size = 0;
+    memset(audio_buffer->empty_samples, 0, AUDIO_CHUNK_SIZE);
+}
 
-static void __isr __time_critical_func(dma_handler)() {
-    cur_audio_buffer = 1 - cur_audio_buffer;
-    dma_hw->ch[sample_dma_chan].al1_read_addr = (intptr_t)&audio_buffers[cur_audio_buffer][0];
+static void audio_buffer_enqueue(audio_buffer_t *audio_buffer, uint8_t sample) {
+    if (audio_buffer->size < AUDIO_BUFFER_SIZE) {
+        audio_buffer->samples[audio_buffer->head] = sample;
+        audio_buffer->head = (audio_buffer->head + 1) % AUDIO_BUFFER_SIZE;
+        audio_buffer->size++;
+    }
+}
+
+static uint8_t *audio_buffer_dequeue(audio_buffer_t *audio_buffer, uint16_t num_samples) {
+    if (audio_buffer->size >= num_samples) {
+        uint8_t *samples = &audio_buffer->samples[audio_buffer->tail];
+        audio_buffer->tail = (audio_buffer->tail + num_samples) % AUDIO_BUFFER_SIZE;
+        audio_buffer->size -= num_samples;
+        return samples;
+    } else {
+        return audio_buffer->empty_samples;
+    }
+}
+
+static void __isr __time_critical_func(audio_dma_irq_handler)() {
+    dma_hw->ch[sample_dma_chan].al1_read_addr = (intptr_t)audio_buffer_dequeue(&audio_buffer, AUDIO_CHUNK_SIZE);
     dma_hw->ch[trigger_dma_chan].al3_read_addr_trig = (intptr_t)&single_sample_ptr;
-
     dma_hw->ints1 = 1u << trigger_dma_chan;
 }
 
@@ -59,164 +77,75 @@ void audio_init(int audio_pin, int sample_freq) {
     trigger_dma_chan = dma_claim_unused_channel(true);
     sample_dma_chan = dma_claim_unused_channel(true);
 
-    // setup PWM DMA channel
+    // Setup PWM DMA channel
     dma_channel_config pwm_dma_chan_config = dma_channel_get_default_config(pwm_dma_chan);
-    channel_config_set_transfer_data_size(&pwm_dma_chan_config, DMA_SIZE_32);  // transfer 32 bits at a time
-    channel_config_set_read_increment(&pwm_dma_chan_config, false);            // always read from the same address
-    channel_config_set_write_increment(&pwm_dma_chan_config, false);           // always write to the same address
-    channel_config_set_chain_to(&pwm_dma_chan_config, sample_dma_chan);        // trigger sample DMA channel when done
-    channel_config_set_dreq(&pwm_dma_chan_config, DREQ_PWM_WRAP0 + audio_pin_slice);  // transfer on PWM cycle end
-    dma_channel_configure(pwm_dma_chan, &pwm_dma_chan_config,
-                          &pwm_hw->slice[audio_pin_slice].cc,  // write to PWM slice CC register
-                          &single_sample,                      // read from single_sample
-                          REPETITION_RATE,                     // transfer once per desired sample repetition
-                          false                                // don't start yet
-    );
+    // Transfer 32 bits at a time
+    channel_config_set_transfer_data_size(&pwm_dma_chan_config, DMA_SIZE_32);
+    // Read from a fixed location, always writes to the same address
+    channel_config_set_read_increment(&pwm_dma_chan_config, false);
+    channel_config_set_write_increment(&pwm_dma_chan_config, false);
+    // Chain to sample DMA channel when done
+    channel_config_set_chain_to(&pwm_dma_chan_config, sample_dma_chan);
+    // Transfer on PWM cycle end
+    channel_config_set_dreq(&pwm_dma_chan_config, DREQ_PWM_WRAP0 + audio_pin_slice);
 
-    // setup trigger DMA channel
+    dma_channel_configure(pwm_dma_chan, &pwm_dma_chan_config,
+                          // Write to PWM slice CC register
+                          &pwm_hw->slice[audio_pin_slice].cc,
+                          // Read from single_sample
+                          &single_sample,
+                          // Transfer once per desired sample repetition
+                          REPETITION_RATE,
+                          // Don't start yet
+                          false);
+
+    // Setup trigger DMA channel
     dma_channel_config trigger_dma_chan_config = dma_channel_get_default_config(trigger_dma_chan);
-    channel_config_set_transfer_data_size(&trigger_dma_chan_config, DMA_SIZE_32);  // transfer 32-bits at a time
-    channel_config_set_read_increment(&trigger_dma_chan_config, false);            // always read from the same address
-    channel_config_set_write_increment(&trigger_dma_chan_config, false);           // always write to the same address
-    channel_config_set_dreq(&trigger_dma_chan_config, DREQ_PWM_WRAP0 + audio_pin_slice);  // transfer on PWM cycle end
-    dma_channel_configure(
-        trigger_dma_chan, &trigger_dma_chan_config,
-        &dma_hw->ch[pwm_dma_chan].al3_read_addr_trig,  // write to PWM DMA channel read address trigger
-        &single_sample_ptr,                            // read from location containing the address of single_sample
-        REPETITION_RATE * AUDIO_BUFFER_SIZE,           // trigger once per audio sample per repetition rate
-        false                                          // don't start yet
-    );
-    dma_channel_set_irq1_enabled(trigger_dma_chan, true);  // fire interrupt when trigger DMA channel is done
-    irq_set_exclusive_handler(DMA_IRQ_1, dma_handler);
+    // Transfer 32-bits at a time
+    channel_config_set_transfer_data_size(&trigger_dma_chan_config, DMA_SIZE_32);
+    // Always read and write from and to the same address
+    channel_config_set_read_increment(&trigger_dma_chan_config, false);
+    channel_config_set_write_increment(&trigger_dma_chan_config, false);
+    // Transfer on PWM cycle end
+    channel_config_set_dreq(&trigger_dma_chan_config, DREQ_PWM_WRAP0 + audio_pin_slice);
+
+    dma_channel_configure(trigger_dma_chan, &trigger_dma_chan_config,
+                          // Write to PWM DMA channel read address trigger
+                          &dma_hw->ch[pwm_dma_chan].al3_read_addr_trig,
+                          // Read from location containing the address of single_sample
+                          &single_sample_ptr,
+                          // Need to trigger once for each audio sample but as the PWM DREQ is
+                          // used need to multiply by repetition rate
+                          REPETITION_RATE * AUDIO_CHUNK_SIZE, false);
+
+    // Fire interrupt when trigger DMA channel is done
+    dma_channel_set_irq1_enabled(trigger_dma_chan, true);
+    irq_set_exclusive_handler(DMA_IRQ_1, audio_dma_irq_handler);
     irq_set_enabled(DMA_IRQ_1, true);
 
-    // setup sample DMA channel
+    // Setup sample DMA channel
     dma_channel_config sample_dma_chan_config = dma_channel_get_default_config(sample_dma_chan);
-    channel_config_set_transfer_data_size(&sample_dma_chan_config, DMA_SIZE_8);  // transfer 8-bits at a time
-    channel_config_set_read_increment(&sample_dma_chan_config,
-                                      true);  // increment read address to go through audio buffer
-    channel_config_set_write_increment(&sample_dma_chan_config, false);  // always write to the same address
+    // Transfer 8-bits at a time
+    channel_config_set_transfer_data_size(&sample_dma_chan_config, DMA_SIZE_8);
+    // Increment read address to go through audio buffer
+    channel_config_set_read_increment(&sample_dma_chan_config, true);
+    // Always write to the same address
+    channel_config_set_write_increment(&sample_dma_chan_config, false);
+
     dma_channel_configure(sample_dma_chan, &sample_dma_chan_config,
-                          (char *)&single_sample + 2 * audio_pin_chan,  // write to single_sample
-                          &audio_buffers[0][0],                         // read from audio buffer
-                          1,     // only do one transfer (once per PWM DMA completion due to chaining)
-                          false  // don't start yet
-    );
+                          // Write to single_sample
+                          (char *)&single_sample + 2 * audio_pin_chan,
+                          // Read from audio buffer
+                          audio_buffer.samples,
+                          // Only do one transfer (once per PWM DMA completion due to chaining)
+                          1,
+                          // Don't start yet
+                          false);
 
-    // clear audio buffers
-    memset(audio_buffers[0], 128, AUDIO_BUFFER_SIZE);
-    memset(audio_buffers[1], 128, AUDIO_BUFFER_SIZE);
+    audio_buffer_init(&audio_buffer);
 
-    // kick things off with the trigger DMA channel
+    // Kick things off with the trigger DMA channel
     dma_channel_start(trigger_dma_chan);
 }
 
-uint8_t *audio_get_buffer(void) {
-    if (last_audio_buffer == cur_audio_buffer) {
-        return NULL;
-    }
-
-    uint8_t *buf = audio_buffers[last_audio_buffer];
-    last_audio_buffer = cur_audio_buffer;
-    return buf;
-}
-
-static int audio_claim_unused_source(void) {
-    for (int i = 0; i < AUDIO_MAX_SOURCES; i++) {
-        if (!mixer_sources[i].active) {
-            mixer_sources[i].active = true;
-            return i;
-        }
-    }
-    return -1;
-}
-
-int audio_play_once(const uint8_t *samples, int len) {
-    int source_id = audio_claim_unused_source();
-    if (source_id < 0) {
-        return -1;
-    }
-    struct MIXER_SOURCE *source = &mixer_sources[source_id];
-    source->samples = samples;
-    source->len = len;
-    source->pos = 0;
-    source->loop = false;
-    source->volume = 256;
-    return source_id;
-}
-
-int audio_play_loop(const uint8_t *samples, int len, int loop_start) {
-    int source_id = audio_play_once(samples, len);
-    if (source_id < 0) {
-        return -1;
-    }
-    struct MIXER_SOURCE *source = &mixer_sources[source_id];
-    source->loop = true;
-    source->loop_start = loop_start;
-    return source_id;
-}
-
-void audio_source_stop(int source_id) { mixer_sources[source_id].active = false; }
-
-void audio_source_set_volume(int source_id, uint16_t volume) { mixer_sources[source_id].volume = volume; }
-
-extern void copy_audiobuf(uint8_t *dest, const uint8_t *src);
-
-void audio_mixer_step(void) {
-    uint8_t *audiobuf = audio_get_buffer();
-    if (!audiobuf) return;
-
-    struct MIXER_SOURCE *source = &mixer_sources[0];
-    if (!source->active) return;
-
-    copy_audiobuf(audiobuf, source->samples + source->pos);
-    source->pos += AUDIO_BUFFER_SIZE;
-    // handle source termination
-    if (source->pos == source->len) {
-        if (source->loop) {
-            source->pos = source->loop_start;
-        } else {
-            source->active = false;
-        }
-    }
-
-    // // setup 16-bit mixer buffer
-    // memset(mixer_buffer, 0, sizeof(mixer_buffer));
-
-    // // mix to 16-bit mixer buffer
-    // for (int i = 0; i < AUDIO_MAX_SOURCES; i++) {
-    //   if (! mixer_sources[i].active) continue;
-    //   struct MIXER_SOURCE *source = &mixer_sources[i];
-
-    //   // mix source
-    //   int mix_len = source->len - source->pos;
-    //   if (mix_len > AUDIO_BUFFER_SIZE) {
-    //     mix_len = AUDIO_BUFFER_SIZE;
-    //   }
-    //   for (int i = 0; i < mix_len; i++) {
-    //     mixer_buffer[i] += ((source->samples[i+source->pos]-128) * source->volume) >> 8;
-    //   }
-    //   source->pos += mix_len;
-
-    //   // handle source termination
-    //   if (source->pos == source->len) {
-    //     if (source->loop) {
-    //       source->pos = source->loop_start;
-    //     } else {
-    //       source->active = false;
-    //     }
-    //   }
-    // }
-
-    // // convert 16-bit mixer buffer to 8-bit output buffer
-    // for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
-    //   int sample = mixer_buffer[i] + 128;
-    //   if (sample < 0) {
-    //     audio_buffer[i] = 0;
-    //   } else if (sample > 255) {
-    //     audio_buffer[i] = 255;
-    //   } else {
-    //     audio_buffer[i] = sample;
-    //   }
-    // }
-}
+void audio_push_sample(const uint8_t sample) { audio_buffer_enqueue(&audio_buffer, sample); }

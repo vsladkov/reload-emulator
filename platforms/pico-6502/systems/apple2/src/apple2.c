@@ -66,13 +66,13 @@ typedef struct {
 
 static state_t __not_in_flash() state;
 
-// audio-streaming callback
-static void push_audio(const uint8_t *samples, int num_samples, void *user_data) {
+// Audio streaming callback
+static void audio_callback(const uint8_t sample, void *user_data) {
     (void)user_data;
-    audio_play_once(samples, num_samples);
+    audio_push_sample(sample);
 }
 
-// get apple2_desc_t struct based on joystick type
+// Get apple2_desc_t struct based on joystick type
 apple2_desc_t apple2_desc(void) {
     return (apple2_desc_t){
         .fdc_enabled = false,
@@ -80,7 +80,7 @@ apple2_desc_t apple2_desc(void) {
         .hdc_internal_flash = false,
         .audio =
             {
-                .callback = {.func = push_audio},
+                .callback = {.func = audio_callback},
                 .sample_rate = 22050,
             },
         .roms =
@@ -220,11 +220,11 @@ void __not_in_flash_func(core1_main()) {
     __builtin_unreachable();
 }
 
-bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *t) {
-    audio_mixer_step();
-    apple2_screen_update(&state.apple2);
-    return true;
-}
+// bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *t) {
+//     audio_mixer_step();
+//     apple2_screen_update(&state.apple2);
+//     return true;
+// }
 
 int main() {
     vreg_set_voltage(VREG_VSEL);
@@ -251,27 +251,26 @@ int main() {
 
     app_init();
 
-    struct repeating_timer timer_20hz;
-    add_repeating_timer_us(-50000, repeating_timer_20hz_callback, NULL, &timer_20hz);
-
     while (1) {
-        tuh_task();
-
         struct timeval tv;
         gettimeofday(&tv, NULL);
         uint64_t start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
 
-        uint32_t num_ticks = clk_us_to_ticks(APPLE2_FREQUENCY, 1000);
+        uint32_t num_ticks = 17030;
         for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
             apple2_tick(&state.apple2);
         }
+
+        apple2_screen_update(&state.apple2);
+
+        tuh_task();
 
         gettimeofday(&tv, NULL);
         uint64_t end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
         uint32_t execution_time = end_time_in_micros - start_time_in_micros;
         // printf("%d us\n", execution_time);
 
-        int sleep_time = 1000 - execution_time;
+        int sleep_time = 16666 - execution_time;
         if (sleep_time > 0) {
             sleep_us(sleep_time);
         }

@@ -59,7 +59,7 @@ typedef struct {
 } chips_display_info_t;
 
 typedef struct {
-    void (*func)(const uint8_t* samples, int num_samples, void* user_data);
+    void (*func)(const uint8_t sample, void* user_data);
     void* user_data;
 } chips_audio_callback_t;
 
@@ -74,7 +74,6 @@ typedef struct {
 
 typedef struct {
     chips_audio_callback_t callback;
-    int num_samples;
     int sample_rate;
     float volume;
 } chips_audio_desc_t;

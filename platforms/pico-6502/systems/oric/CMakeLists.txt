@@ -7,7 +7,6 @@ add_executable(oric
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils.S
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/hid_app.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../src/audio.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../src/utils.S
 )
 
 target_compile_options(oric PRIVATE -Wall)

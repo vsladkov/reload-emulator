@@ -62,20 +62,20 @@ typedef struct {
 
 state_t __not_in_flash() state;
 
-// audio-streaming callback
-static void push_audio(const uint8_t *samples, int num_samples, void *user_data) {
+// Audio streaming callback
+static void audio_callback(const uint8_t sample, void *user_data) {
     (void)user_data;
-    audio_play_once(samples, num_samples);
+    audio_push_sample(sample);
 }
 
-// get oric_desc_t struct based on joystick type
+// Get oric_desc_t struct based on joystick type
 oric_desc_t oric_desc(void) {
     return (oric_desc_t){
         .td_enabled = true,
         .fdc_enabled = true,
         .audio =
             {
-                .callback = {.func = push_audio},
+                .callback = {.func = audio_callback},
                 .sample_rate = 22050,
             },
         .roms =
@@ -215,7 +215,8 @@ static inline void __not_in_flash_func(render_frame)() {
         queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
 
         queue_remove_blocking_u32(&dvi0.q_tmds_free, &tmdsbuf);
-        render_scanline((const uint32_t *)(&state.oric.fb[(y + 1) * 120]), (uint32_t *)(&scanbuf[ORIC_EMPTY_COLUMNS]), 120);
+        render_scanline((const uint32_t *)(&state.oric.fb[(y + 1) * 120]), (uint32_t *)(&scanbuf[ORIC_EMPTY_COLUMNS]),
+                        120);
         tmds_encode_palette_data((const uint32_t *)scanbuf, tmds_palette, tmdsbuf, FRAME_WIDTH, PALETTE_BITS);
         queue_add_blocking_u32(&dvi0.q_tmds_valid, &tmdsbuf);
     }
@@ -232,12 +233,6 @@ void __not_in_flash_func(core1_main()) {
     }
 
     __builtin_unreachable();
-}
-
-bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *t) {
-    audio_mixer_step();
-    oric_screen_update(&state.oric);
-    return true;
 }
 
 int main() {
@@ -265,32 +260,31 @@ int main() {
 
     app_init();
 
-    struct repeating_timer timer_20hz;
-    add_repeating_timer_us(-50000, repeating_timer_20hz_callback, NULL, &timer_20hz);
-
     while (1) {
-        tuh_task();
-
         struct timeval tv;
         gettimeofday(&tv, NULL);
         uint64_t start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
 
-        uint32_t num_ticks = clk_us_to_ticks(ORIC_FREQUENCY, 1000);
+        uint32_t num_ticks = 16640;
         for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
             oric_tick(&state.oric);
         }
+
+        oric_screen_update(&state.oric);
+
+        tuh_task();
 
         gettimeofday(&tv, NULL);
         uint64_t end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
         uint32_t execution_time = end_time_in_micros - start_time_in_micros;
         // printf("%d us\n", execution_time);
 
-        int sleep_time = 1000 - execution_time;
+        int sleep_time = 16640 - execution_time;
         if (sleep_time > 0) {
             sleep_us(sleep_time);
         }
 
-        kbd_update(&state.oric.kbd, 1000);
+        kbd_update(&state.oric.kbd, 16640);
     }
 
     __builtin_unreachable();

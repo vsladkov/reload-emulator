@@ -74,8 +74,6 @@ extern "C" {
 #define APPLE2_SNAPSHOT_VERSION (1)
 
 #define APPLE2_FREQUENCY             (1021800)
-#define APPLE2_MAX_AUDIO_SAMPLES     (2048)  // Max number of audio samples in internal sample buffer
-#define APPLE2_DEFAULT_AUDIO_SAMPLES (2048)  // Default number of samples in internal sample buffer
 
 #define APPLE2_SCREEN_WIDTH     560  // (280 * 2)
 #define APPLE2_SCREEN_HEIGHT    192  // (192)
@@ -105,12 +103,7 @@ typedef struct {
     bool valid;
     chips_debug_t debug;
 
-    struct {
-        chips_audio_callback_t callback;
-        int num_samples;
-        int sample_pos;
-        uint8_t sample_buffer[APPLE2_MAX_AUDIO_SAMPLES];
-    } audio;
+    chips_audio_callback_t audio_callback;
 
     uint8_t ram[0xC000];
     uint8_t *rom;
@@ -206,9 +199,7 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     memset(sys, 0, sizeof(apple2_t));
     sys->valid = true;
     sys->debug = desc->debug;
-    sys->audio.callback = desc->audio.callback;
-    sys->audio.num_samples = CHIPS_DEFAULT(desc->audio.num_samples, APPLE2_DEFAULT_AUDIO_SAMPLES);
-    CHIPS_ASSERT(sys->audio.num_samples <= APPLE2_MAX_AUDIO_SAMPLES);
+    sys->audio_callback = desc->audio.callback;
 
     CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x4000));
     CHIPS_ASSERT(desc->roms.character_rom.ptr && (desc->roms.character_rom.size == 0x800));
@@ -255,8 +246,8 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
             }
         } else {
             while (!msc_inquiry_complete) {
+                sleep_us(16666);
                 tuh_task();
-                sleep_us(1000);
             }
             if (CHIPS_ARRAY_SIZE(apple2_msc_images) > 0) {
                 prodos_hdd_insert_disk_msc(&sys->hdc.hdd[0], apple2_msc_images[0]);
@@ -429,17 +420,9 @@ void apple2_tick(apple2_t *sys) {
 
     // Update beeper
     if (beeper_tick(&sys->beeper)) {
-        // New audio sample ready
-        // sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)((sys->beeper.sample * 0.5f + 0.5f) *
-        // 255.0f);
-        sys->audio.sample_buffer[sys->audio.sample_pos++] = (uint8_t)(sys->beeper.sample * 255.0f);
-        if (sys->audio.sample_pos == sys->audio.num_samples) {
-            if (sys->audio.callback.func) {
-                // New sample packet is ready
-                sys->audio.callback.func(sys->audio.sample_buffer, sys->audio.num_samples,
-                                         sys->audio.callback.user_data);
-            }
-            sys->audio.sample_pos = 0;
+        if (sys->audio_callback.func) {
+            // New sample is ready
+            sys->audio_callback.func((uint8_t)(sys->beeper.sample * 255.0f), sys->audio_callback.user_data);
         }
     }
 
@@ -547,7 +530,7 @@ uint32_t apple2_save_snapshot(apple2_t *sys, apple2_t *dst) {
     CHIPS_ASSERT(sys && dst);
     *dst = *sys;
     chips_debug_snapshot_onsave(&dst->debug);
-    chips_audio_callback_snapshot_onsave(&dst->audio.callback);
+    chips_audio_callback_snapshot_onsave(&dst->audio_callback);
     // m6502_snapshot_onsave(&dst->cpu);
     disk2_fdc_snapshot_onsave(&dst->fdc);
     mem_snapshot_onsave(&dst->mem, sys);
@@ -562,7 +545,7 @@ bool apple2_load_snapshot(apple2_t *sys, uint32_t version, apple2_t *src) {
     static apple2_t im;
     im = *src;
     chips_debug_snapshot_onload(&im.debug, &sys->debug);
-    chips_audio_callback_snapshot_onload(&im.audio.callback, &sys->audio.callback);
+    chips_audio_callback_snapshot_onload(&im.audio_callback, &sys->audio_callback);
     // m6502_snapshot_onload(&im.cpu, &sys->cpu);
     disk2_fdc_snapshot_onload(&im.fdc, &sys->fdc);
     mem_snapshot_onload(&im.mem, sys);
