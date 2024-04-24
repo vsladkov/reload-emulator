@@ -26,15 +26,15 @@ typedef struct {
 
 static audio_buffer_t __not_in_flash() audio_buffer;
 
-static void audio_buffer_init(audio_buffer_t *audio_buffer) {
+static inline void __not_in_flash_func(audio_buffer_init)(audio_buffer_t *audio_buffer) {
     memset(audio_buffer->samples, 0, AUDIO_BUFFER_SIZE);
+    memset(audio_buffer->empty_samples, 0, AUDIO_CHUNK_SIZE);
     audio_buffer->head = 0;
     audio_buffer->tail = 0;
     audio_buffer->size = 0;
-    memset(audio_buffer->empty_samples, 0, AUDIO_CHUNK_SIZE);
 }
 
-static void audio_buffer_enqueue(audio_buffer_t *audio_buffer, uint8_t sample) {
+static inline void __not_in_flash_func(audio_buffer_enqueue)(audio_buffer_t *audio_buffer, uint8_t sample) {
     if (audio_buffer->size < AUDIO_BUFFER_SIZE) {
         audio_buffer->samples[audio_buffer->head] = sample;
         audio_buffer->head = (audio_buffer->head + 1) % AUDIO_BUFFER_SIZE;
@@ -42,10 +42,13 @@ static void audio_buffer_enqueue(audio_buffer_t *audio_buffer, uint8_t sample) {
     }
 }
 
-static uint8_t *audio_buffer_dequeue(audio_buffer_t *audio_buffer, uint16_t num_samples) {
+static inline uint8_t* __not_in_flash_func(audio_buffer_dequeue)(audio_buffer_t *audio_buffer, uint16_t num_samples) {
     if (audio_buffer->size >= num_samples) {
         uint8_t *samples = &audio_buffer->samples[audio_buffer->tail];
-        audio_buffer->tail = (audio_buffer->tail + num_samples) % AUDIO_BUFFER_SIZE;
+        audio_buffer->tail = audio_buffer->tail + num_samples;
+        if (audio_buffer->tail >= AUDIO_BUFFER_SIZE) {
+            audio_buffer->tail = 0;
+        }
         audio_buffer->size -= num_samples;
         return samples;
     } else {
@@ -53,7 +56,7 @@ static uint8_t *audio_buffer_dequeue(audio_buffer_t *audio_buffer, uint16_t num_
     }
 }
 
-static void __isr __time_critical_func(audio_dma_irq_handler)() {
+static void __not_in_flash_func(audio_dma_irq_handler)() {
     dma_hw->ch[sample_dma_chan].al1_read_addr = (intptr_t)audio_buffer_dequeue(&audio_buffer, AUDIO_CHUNK_SIZE);
     dma_hw->ch[trigger_dma_chan].al3_read_addr_trig = (intptr_t)&single_sample_ptr;
     dma_hw->ints1 = 1u << trigger_dma_chan;
