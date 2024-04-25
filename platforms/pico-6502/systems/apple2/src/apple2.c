@@ -208,8 +208,6 @@ static inline void __not_in_flash_func(render_frame)() {
 }
 
 void __not_in_flash_func(core1_main()) {
-    audio_init(_AUDIO_PIN, 22050);
-
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
 
@@ -222,12 +220,6 @@ void __not_in_flash_func(core1_main()) {
     __builtin_unreachable();
 }
 
-// bool __not_in_flash_func(repeating_timer_20hz_callback)(struct repeating_timer *t) {
-//     audio_mixer_step();
-//     apple2_screen_update(&state.apple2);
-//     return true;
-// }
-
 int main() {
     vreg_set_voltage(VREG_VSEL);
     sleep_ms(10);
@@ -235,6 +227,8 @@ int main() {
 
     stdio_init_all();
     tusb_init();
+
+    audio_init(_AUDIO_PIN, 22050);
 
     printf("Configuring DVI\n");
 

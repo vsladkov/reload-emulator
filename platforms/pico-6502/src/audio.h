@@ -1,8 +1,9 @@
 #ifndef AUDIO_H_FILE
 #define AUDIO_H_FILE
 
-#define AUDIO_BUFFER_SIZE 2048
-#define AUDIO_CHUNK_SIZE 256
+#define AUDIO_BUFFER_SIZE 1024
+#define AUDIO_CHUNK_SIZE  64
+#define REPETITION_RATE   4
 
 #include <stdint.h>
 
