@@ -5,17 +5,19 @@
 #include "hardware/dma.h"
 #include "hardware/irq.h"
 #include "hardware/pwm.h"
-#include "hardware/sync.h"
 #include "hardware/clocks.h"
+#include "pico/critical_section.h"
 
 #include "audio.h"
 
-static uint32_t single_sample = 0;
-static uint32_t *single_sample_ptr = &single_sample;
-static int pwm_dma_channel, trigger_dma_channel, sample_dma_channel;
+#define SAMPLES_BUFFER_SIZE    2048
+#define SAMPLES_CHUNK_SIZE     32
+#define SAMPLE_REPETITION_RATE 4
 
 typedef struct {
-    uint8_t samples[AUDIO_BUFFER_SIZE];
+    critical_section_t cs;
+    uint8_t samples[SAMPLES_BUFFER_SIZE];
+    uint8_t empty_samples[SAMPLES_CHUNK_SIZE];
     uint16_t head;
     uint16_t tail;
     uint16_t size;
@@ -23,58 +25,64 @@ typedef struct {
 
 static audio_buffer_t __not_in_flash() audio_buffer;
 
+static uint32_t single_sample = 0;
+static uint32_t *single_sample_ptr = &single_sample;
+static int pwm_dma_channel, trigger_dma_channel, sample_dma_channel;
+
 static inline void __not_in_flash_func(audio_buffer_init)(audio_buffer_t *audio_buffer) {
-    memset(audio_buffer->samples, 0, AUDIO_BUFFER_SIZE);
+    critical_section_init(&audio_buffer->cs);
+    memset(audio_buffer->samples, 0, SAMPLES_BUFFER_SIZE);
+    memset(audio_buffer->empty_samples, 0, SAMPLES_CHUNK_SIZE);
     audio_buffer->head = 0;
     audio_buffer->tail = 0;
     audio_buffer->size = 0;
 }
 
 static inline void __not_in_flash_func(audio_buffer_enqueue)(audio_buffer_t *audio_buffer, uint8_t sample) {
-    if (audio_buffer->size < AUDIO_BUFFER_SIZE) {
+    if (audio_buffer->size < SAMPLES_BUFFER_SIZE) {
         audio_buffer->samples[audio_buffer->head++] = sample;
-        if (audio_buffer->head >= AUDIO_BUFFER_SIZE) {
+        if (audio_buffer->head >= SAMPLES_BUFFER_SIZE) {
             audio_buffer->head = 0;
         }
+        critical_section_enter_blocking(&audio_buffer->cs);
         audio_buffer->size++;
+        critical_section_exit(&audio_buffer->cs);
     }
 }
 
-static inline uint8_t* __not_in_flash_func(audio_buffer_dequeue)(audio_buffer_t *audio_buffer, uint16_t num_samples) {
-    if (audio_buffer->size < num_samples) {
-        int p = audio_buffer->head == 0 ? AUDIO_BUFFER_SIZE : audio_buffer->head;
-        int c = audio_buffer->samples[p - 1];
-        int len = num_samples - audio_buffer->size;
-        memset(audio_buffer->samples + audio_buffer->head, c, len);
-        audio_buffer->head += len;
-        if (audio_buffer->head >= AUDIO_BUFFER_SIZE) {
-            audio_buffer->head = 0;
+static inline uint8_t *__not_in_flash_func(audio_buffer_dequeue)(audio_buffer_t *audio_buffer) {
+    if (audio_buffer->size >= SAMPLES_CHUNK_SIZE) {
+        uint8_t *samples = &audio_buffer->samples[audio_buffer->tail];
+        audio_buffer->tail += SAMPLES_CHUNK_SIZE;
+        if (audio_buffer->tail >= SAMPLES_BUFFER_SIZE) {
+            audio_buffer->tail = 0;
         }
-        audio_buffer->size = num_samples;
+        critical_section_enter_blocking(&audio_buffer->cs);
+        audio_buffer->size -= SAMPLES_CHUNK_SIZE;
+        critical_section_exit(&audio_buffer->cs);
+        return samples;
+    } else {
+        int p = audio_buffer->tail == 0 ? SAMPLES_BUFFER_SIZE : audio_buffer->tail;
+        int c = audio_buffer->samples[p - 1];
+        memset(audio_buffer->empty_samples, c, SAMPLES_CHUNK_SIZE);
+        return audio_buffer->empty_samples;    
     }
-    uint8_t *samples = &audio_buffer->samples[audio_buffer->tail];
-    audio_buffer->tail += num_samples;
-    if (audio_buffer->tail >= AUDIO_BUFFER_SIZE) {
-        audio_buffer->tail = 0;
-    }
-    audio_buffer->size -= num_samples;
-    return samples;
 }
 
 static void __not_in_flash_func(audio_dma_irq_handler)() {
-    dma_channel_set_read_addr(sample_dma_channel, audio_buffer_dequeue(&audio_buffer, AUDIO_CHUNK_SIZE), false);
+    dma_channel_set_read_addr(sample_dma_channel, audio_buffer_dequeue(&audio_buffer), false);
     dma_channel_set_read_addr(trigger_dma_channel, &single_sample_ptr, true);
     dma_channel_acknowledge_irq1(trigger_dma_channel);
 }
 
-void audio_init(int audio_pin, int sample_freq) {
+void audio_init(uint8_t audio_pin, uint16_t sample_freq) {
     gpio_set_function(audio_pin, GPIO_FUNC_PWM);
 
     int audio_pin_slice = pwm_gpio_to_slice_num(audio_pin);
-    int audio_pin_chan = pwm_gpio_to_channel(audio_pin);
+    int audio_pin_channel = pwm_gpio_to_channel(audio_pin);
 
     uint f_clk_sys = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS);
-    float clock_div = ((float)f_clk_sys * 1000.0f) / 255.0f / (float)sample_freq / (float)REPETITION_RATE;
+    float clock_div = ((float)f_clk_sys * 1000.0f) / 255.0f / (float)sample_freq / (float)SAMPLE_REPETITION_RATE;
 
     pwm_config config = pwm_get_default_config();
     pwm_config_set_clkdiv(&config, clock_div);
@@ -103,7 +111,7 @@ void audio_init(int audio_pin, int sample_freq) {
                           // Read from single_sample
                           &single_sample,
                           // Transfer once per desired sample repetition
-                          REPETITION_RATE,
+                          SAMPLE_REPETITION_RATE,
                           // Don't start yet
                           false);
 
@@ -123,8 +131,10 @@ void audio_init(int audio_pin, int sample_freq) {
                           // Read from location containing the address of single_sample
                           &single_sample_ptr,
                           // Need to trigger once for each audio sample but as the PWM DREQ is
-                          // used need to multiply by repetition rate
-                          REPETITION_RATE * AUDIO_CHUNK_SIZE, false);
+                          // used need to multiply by sample repetition rate
+                          SAMPLE_REPETITION_RATE * SAMPLES_CHUNK_SIZE,
+                          // Don't start yet
+                          false);
 
     // Fire interrupt when trigger DMA channel is done
     dma_channel_set_irq1_enabled(trigger_dma_channel, true);
@@ -142,7 +152,7 @@ void audio_init(int audio_pin, int sample_freq) {
 
     dma_channel_configure(sample_dma_channel, &sample_dma_channel_config,
                           // Write to single_sample
-                          (char *)&single_sample + 2 * audio_pin_chan,
+                          (char *)&single_sample + 2 * audio_pin_channel,
                           // Read from audio buffer
                           audio_buffer.samples,
                           // Only do one transfer (once per PWM DMA completion due to chaining)

@@ -38,11 +38,7 @@
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
 #include "hardware/structs/bus_ctrl.h"
-#include "hardware/structs/ssi.h"
-#include "hardware/sync.h"
 #include "hardware/vreg.h"
-#include "pico/multicore.h"
-#include "pico/sem.h"
 
 #include "tmds_encode.h"
 
@@ -208,6 +204,8 @@ static inline void __not_in_flash_func(render_frame)() {
 }
 
 void __not_in_flash_func(core1_main()) {
+    audio_init(_AUDIO_PIN, 22050);
+
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
 
@@ -227,8 +225,6 @@ int main() {
 
     stdio_init_all();
     tusb_init();
-
-    audio_init(_AUDIO_PIN, 22050);
 
     printf("Configuring DVI\n");
 
