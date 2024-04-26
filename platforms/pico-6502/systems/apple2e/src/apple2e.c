@@ -42,6 +42,8 @@
 #include "hardware/irq.h"
 #include "hardware/structs/bus_ctrl.h"
 #include "hardware/vreg.h"
+#include "hardware/interp.h"
+#include "pico/multicore.h"
 
 #include "tmds_encode.h"
 

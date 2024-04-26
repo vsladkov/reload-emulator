@@ -1038,16 +1038,6 @@ static uint16_t _apple2e_double_7_bits(uint8_t bits) {
     return result;
 }
 
-static uint8_t _apple2e_reverse_7_bits(uint8_t bits) {
-    uint8_t result = 0;
-    for (int i = 0; i < 7; i++) {
-        result <<= 1;
-        result |= bits & 1;
-        bits >>= 1;
-    }
-    return result;
-}
-
 static void _apple2e_render_line_monochrome(uint8_t *out, uint16_t *in, int start_col, int stop_col) {
     uint32_t w = in[start_col];
 
@@ -1106,7 +1096,6 @@ static uint8_t _apple2e_get_text_character(apple2e_t *sys, uint8_t code, uint16_
     uint8_t bits = sys->character_rom[code * 8 + row];
     bits = bits & 0x7F;
     bits ^= invert_mask;
-    // return _apple2e_reverse_7_bits(bits);
     return bits;
 }
 
