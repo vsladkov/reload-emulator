@@ -17,6 +17,17 @@ static inline bool find_key_in_report(hid_keyboard_report_t const* report, uint8
 
 static void process_kbd_report(hid_keyboard_report_t const* r1, hid_keyboard_report_t const* r2,
                                void (*kbd_raw_key_cb)(int code)) {
+    // Left GUI modifier                                
+    if (r1->modifier & KEYBOARD_MODIFIER_LEFTGUI && !(r2->modifier & KEYBOARD_MODIFIER_LEFTGUI)) {
+        kbd_raw_key_cb(HID_KEY_GUI_LEFT | 0x100);
+    }
+
+    // Right GUI modifier
+    if (r1->modifier & KEYBOARD_MODIFIER_RIGHTGUI && !(r2->modifier & KEYBOARD_MODIFIER_RIGHTGUI)) {
+        kbd_raw_key_cb(HID_KEY_GUI_RIGHT | 0x100);
+    }
+
+    // Process keycodes
     for (int i = 0; i < 6; i++) {
         if (r1->keycode[i]) {
             if (!find_key_in_report(r2, r1->keycode[i])) {
