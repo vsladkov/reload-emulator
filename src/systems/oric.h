@@ -71,8 +71,6 @@ extern "C" {
 #define ORIC_SNAPSHOT_VERSION (1)
 
 #define ORIC_FREQUENCY             (1000000)  // 1 MHz
-#define ORIC_MAX_AUDIO_SAMPLES     (2048)     // Max number of audio samples in internal sample buffer
-#define ORIC_DEFAULT_AUDIO_SAMPLES (2048)     // Default number of samples in internal sample buffer
 #define ORIC_MAX_TAPE_SIZE         (1 << 16)  // Max size of tape file in bytes
 
 #define ORIC_SCREEN_WIDTH     240  // (240)

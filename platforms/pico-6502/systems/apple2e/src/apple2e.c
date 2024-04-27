@@ -82,7 +82,7 @@ apple2e_desc_t apple2e_desc(void) {
         .audio =
             {
                 .callback = {.func = audio_callback},
-                .sample_rate = 22050,
+                .sample_rate = 44100,
             },
         .roms =
             {
@@ -101,17 +101,17 @@ void app_init(void) {
 
 // TMDS bit clock 400 MHz
 // DVDD 1.3V
-#define FRAME_WIDTH  800
-#define FRAME_HEIGHT 600
-#define VREG_VSEL    VREG_VOLTAGE_1_30
-#define DVI_TIMING   dvi_timing_800x600p_60hz
+// #define FRAME_WIDTH  800
+// #define FRAME_HEIGHT 600
+// #define VREG_VSEL    VREG_VOLTAGE_1_30
+// #define DVI_TIMING   dvi_timing_800x600p_60hz
 
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
-// #define FRAME_WIDTH  640
-// #define FRAME_HEIGHT 480
-// #define VREG_VSEL    VREG_VOLTAGE_1_10
-// #define DVI_TIMING   dvi_timing_640x480p_60hz
+#define FRAME_WIDTH  640
+#define FRAME_HEIGHT 480
+#define VREG_VSEL    VREG_VOLTAGE_1_10
+#define DVI_TIMING   dvi_timing_640x480p_60hz
 
 #define PALETTE_BITS 4
 #define PALETTE_SIZE (1 << PALETTE_BITS)
@@ -227,6 +227,8 @@ static inline void __not_in_flash_func(render_frame)() {
 }
 
 void __not_in_flash_func(core1_main()) {
+    audio_init(_AUDIO_PIN, 44100);
+
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
 
@@ -246,8 +248,6 @@ int main() {
 
     stdio_init_all();
     tusb_init();
-
-    audio_init(_AUDIO_PIN, 22050);
 
     printf("Configuring DVI\n");
 
@@ -275,7 +275,6 @@ int main() {
         }
 
         apple2e_screen_update(&state.apple2e);
-
         tuh_task();
 
         gettimeofday(&tv, NULL);

@@ -79,7 +79,7 @@ apple2_desc_t apple2_desc(void) {
         .audio =
             {
                 .callback = {.func = audio_callback},
-                .sample_rate = 22050,
+                .sample_rate = 44100,
             },
         .roms =
             {
@@ -206,7 +206,7 @@ static inline void __not_in_flash_func(render_frame)() {
 }
 
 void __not_in_flash_func(core1_main()) {
-    audio_init(_AUDIO_PIN, 22050);
+    audio_init(_AUDIO_PIN, 44100);
 
     dvi_register_irqs_this_core(&dvi0, DMA_IRQ_0);
     dvi_start(&dvi0);
@@ -254,7 +254,6 @@ int main() {
         }
 
         apple2_screen_update(&state.apple2);
-
         tuh_task();
 
         gettimeofday(&tv, NULL);

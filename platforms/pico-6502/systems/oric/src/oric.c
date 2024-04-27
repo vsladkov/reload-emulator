@@ -263,13 +263,13 @@ int main() {
         gettimeofday(&tv, NULL);
         uint64_t start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
 
-        uint32_t num_ticks = 16640;
+        uint32_t num_ticks = 19968;
         for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
             oric_tick(&state.oric);
         }
 
         oric_screen_update(&state.oric);
-
+        kbd_update(&state.oric.kbd, 19968);
         tuh_task();
 
         gettimeofday(&tv, NULL);
@@ -277,12 +277,10 @@ int main() {
         uint32_t execution_time = end_time_in_micros - start_time_in_micros;
         // printf("%d us\n", execution_time);
 
-        int sleep_time = 16640 - execution_time;
+        int sleep_time = 19968 - execution_time;
         if (sleep_time > 0) {
             sleep_us(sleep_time);
         }
-
-        kbd_update(&state.oric.kbd, 16640);
     }
 
     __builtin_unreachable();

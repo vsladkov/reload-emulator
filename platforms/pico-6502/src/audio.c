@@ -81,8 +81,8 @@ void audio_init(uint8_t audio_pin, uint16_t sample_freq) {
     int audio_pin_slice = pwm_gpio_to_slice_num(audio_pin);
     int audio_pin_channel = pwm_gpio_to_channel(audio_pin);
 
-    uint f_clk_sys = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS);
-    float clock_div = ((float)f_clk_sys * 1000.0f) / 255.0f / (float)sample_freq / (float)SAMPLE_REPETITION_RATE;
+    uint32_t f_clk_sys = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS);
+    float clock_div = ((float)f_clk_sys * 1000.0f) / 255.0f / (float)sample_freq / (float)SAMPLE_REPETITION_RATE - 0.02f;
 
     pwm_config config = pwm_get_default_config();
     pwm_config_set_clkdiv(&config, clock_div);

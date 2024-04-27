@@ -216,7 +216,7 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
 
     beeper_init(&sys->beeper, &(beeper_desc_t){
                                   .tick_hz = APPLE2_FREQUENCY,
-                                  .sound_hz = CHIPS_DEFAULT(desc->audio.sample_rate, 22050),
+                                  .sound_hz = CHIPS_DEFAULT(desc->audio.sample_rate, 44100),
                                   .base_volume = CHIPS_DEFAULT(desc->audio.volume, 1.0f),
                               });
 
