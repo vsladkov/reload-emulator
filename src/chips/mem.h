@@ -326,6 +326,11 @@ uint8_t* mem_readptr(mem_t* m, uint16_t addr) {
     return (uint8_t*)&(m->page_table[addr >> MEM_PAGE_SHIFT].read_ptr[addr & MEM_PAGE_MASK]);
 }
 
+uint8_t* mem_writeptr(mem_t* m, uint16_t addr) {
+    CHIPS_ASSERT(m);
+    return (uint8_t*)&(m->page_table[addr >> MEM_PAGE_SHIFT].write_ptr[addr & MEM_PAGE_MASK]);
+}
+
 void mem_write_range(mem_t* m, uint16_t addr, const uint8_t* src, uint32_t num_bytes) {
     for (size_t i = 0; i < num_bytes; i++) {
         mem_wr(m, addr++, src[i]);

@@ -81,7 +81,6 @@ void prodos_hdd_init(prodos_hdd_t* sys) {
     CHIPS_ASSERT(sys && !sys->valid);
     memset(sys, 0, sizeof(prodos_hdd_t));
     sys->valid = true;
-    sys->write_protected = true;
     sys->image_type = PRODOS_HDD_IMAGE_TYPE_INTERNAL;
     sys->image_loaded = false;
 }
@@ -95,7 +94,7 @@ void prodos_hdd_reset(prodos_hdd_t* sys) { CHIPS_ASSERT(sys && sys->valid); }
 
 bool prodos_hdd_insert_disk_msc(prodos_hdd_t* sys, const char* file_name) {
     CHIPS_ASSERT(sys && sys->valid);
-    FRESULT res = f_open(&sys->fil, file_name, FA_READ);
+    FRESULT res = f_open(&sys->fil, file_name, FA_READ | FA_WRITE);
     if (res != FR_OK) {
         printf("Error %u opening file %s\r\n", res, file_name);
         return false;
@@ -103,6 +102,7 @@ bool prodos_hdd_insert_disk_msc(prodos_hdd_t* sys, const char* file_name) {
     sys->image_type = PRODOS_HDD_IMAGE_TYPE_MSC;
     sys->image_blocks = f_size(&sys->fil) / PRODOS_HDD_BYTES_PER_BLOCK;
     sys->image_loaded = true;
+    sys->write_protected = false;
 
     return true;
 }
@@ -110,9 +110,10 @@ bool prodos_hdd_insert_disk_msc(prodos_hdd_t* sys, const char* file_name) {
 bool prodos_hdd_insert_disk_internal(prodos_hdd_t* sys, uint8_t* po_image, uint32_t po_image_size) {
     CHIPS_ASSERT(sys && sys->valid);
     sys->po_image = po_image;
-    sys->image_blocks = po_image_size / PRODOS_HDD_BYTES_PER_BLOCK;
     sys->image_type = PRODOS_HDD_IMAGE_TYPE_INTERNAL;
+    sys->image_blocks = po_image_size / PRODOS_HDD_BYTES_PER_BLOCK;
     sys->image_loaded = true;
+    sys->write_protected = true;
 
     return true;
 }
@@ -143,20 +144,19 @@ uint8_t prodos_hdd_read_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block
 
     if (sys->image_type == PRODOS_HDD_IMAGE_TYPE_MSC) {
         // USB flash drive
-        uint8_t buf[PRODOS_HDD_BYTES_PER_BLOCK];
+        uint8_t* buf = mem_writeptr(mem, buffer);
         FRESULT res;
         res = f_lseek(&sys->fil, block * PRODOS_HDD_BYTES_PER_BLOCK);
         if (res != FR_OK) {
             printf("Error %u reading from file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
-        UINT nread = sizeof(buf);
-        res = f_read(&sys->fil, buf, sizeof(buf), &nread);
-        if (res != FR_OK) {
+        UINT nread;
+        res = f_read(&sys->fil, buf, PRODOS_HDD_BYTES_PER_BLOCK, &nread);
+        if (res != FR_OK || nread != PRODOS_HDD_BYTES_PER_BLOCK) {
             printf("Error %u reading from file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
-        mem_write_range(mem, buffer, buf, PRODOS_HDD_BYTES_PER_BLOCK);
     } else {
         // Internal flash
         mem_write_range(mem, buffer, sys->po_image + block * PRODOS_HDD_BYTES_PER_BLOCK, PRODOS_HDD_BYTES_PER_BLOCK);
@@ -166,6 +166,7 @@ uint8_t prodos_hdd_read_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block
 }
 
 uint8_t prodos_hdd_write_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block, mem_t* mem) {
+    printf("prodos_hdd_write_block\r\n");
     CHIPS_ASSERT(sys && sys->valid);
     if (block >= sys->image_blocks) {
         return PRODOS_HDD_ERR_IO;
@@ -176,20 +177,19 @@ uint8_t prodos_hdd_write_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t bloc
 
     if (sys->image_type == PRODOS_HDD_IMAGE_TYPE_MSC) {
         // USB flash drive
-        uint8_t buf[PRODOS_HDD_BYTES_PER_BLOCK];
-        memcpy(buf, mem_readptr(mem, buffer), PRODOS_HDD_BYTES_PER_BLOCK);
         FRESULT res;
         res = f_lseek(&sys->fil, block * PRODOS_HDD_BYTES_PER_BLOCK);
         if (res != FR_OK) {
             printf("Error %u writing to file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
-        UINT nwritten = sizeof(buf);
-        res = f_write(&sys->fil, buf, sizeof(buf), &nwritten);
-        if (res != FR_OK) {
+        UINT nwritten;
+        res = f_write(&sys->fil, mem_readptr(mem, buffer), PRODOS_HDD_BYTES_PER_BLOCK, &nwritten);
+        if (res != FR_OK || nwritten != PRODOS_HDD_BYTES_PER_BLOCK) {
             printf("Error %u writing to file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
+        f_sync(&sys->fil);
     }
 
     return PRODOS_HDD_ERR_OK;
