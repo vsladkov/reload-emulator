@@ -52,7 +52,7 @@ void apple2_lc_snapshot_onsave(apple2_lc_t* snapshot);
 void apple2_lc_snapshot_onload(apple2_lc_t* snapshot, apple2_lc_t* dev);
 
 #ifdef __cplusplus
-} /* extern "C" */
+} // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
@@ -143,4 +143,4 @@ void apple2_lc_snapshot_onsave(apple2_lc_t* snapshot) { CHIPS_ASSERT(snapshot); 
 
 void apple2_lc_snapshot_onload(apple2_lc_t* snapshot, apple2_lc_t* dev) { CHIPS_ASSERT(snapshot && dev); }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

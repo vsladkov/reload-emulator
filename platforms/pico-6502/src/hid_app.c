@@ -17,7 +17,7 @@ static inline bool find_key_in_report(hid_keyboard_report_t const* report, uint8
 
 static void process_kbd_report(hid_keyboard_report_t const* r1, hid_keyboard_report_t const* r2,
                                void (*kbd_raw_key_cb)(int code)) {
-    // Left GUI modifier                                
+    // Left GUI modifier
     if (r1->modifier & KEYBOARD_MODIFIER_LEFTGUI && !(r2->modifier & KEYBOARD_MODIFIER_LEFTGUI)) {
         kbd_raw_key_cb(HID_KEY_GUI_LEFT | 0x100);
     }
@@ -35,7 +35,7 @@ static void process_kbd_report(hid_keyboard_report_t const* r1, hid_keyboard_rep
                 bool is_ctrl = r1->modifier & (KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTCTRL);
                 uint8_t keycode = r1->keycode[i];
                 int code = conv_table[keycode][is_shift];
-                if (code == 0 && keycode != 0) {                    
+                if (code == 0 && keycode != 0) {
                     code = keycode | 0x100;
                 } else if (is_ctrl) {
                     code &= ~0x60;

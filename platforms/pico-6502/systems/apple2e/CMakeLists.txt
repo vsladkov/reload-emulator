@@ -14,8 +14,9 @@ target_compile_options(apple2e PRIVATE -Wall)
 
 target_compile_definitions(apple2e PRIVATE
 	# DVI_DEFAULT_SERIAL_CONFIG=pico_sock_cfg
-	DVI_DEFAULT_SERIAL_CONFIG=pico_neo6502_cfg
-	PICO_NEO6502=1
+	DVI_DEFAULT_SERIAL_CONFIG=olimex_neo6502_cfg
+	# DVI_DEFAULT_SERIAL_CONFIG=olimex_rp2040pc_cfg
+	# DVI_DEFAULT_SERIAL_CONFIG=pico_zero_cfg
 )
 
 target_link_libraries(apple2e

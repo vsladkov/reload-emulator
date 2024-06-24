@@ -10,18 +10,18 @@ extern "C" {
 #endif
 
 // Disk II FDC softswitches
-#define DISK2_FDC_PHASE0_OFF    (0x00)  // turn stepper motor phase 0 off
-#define DISK2_FDC_PHASE0_ON     (0x01)  // turn stepper motor phase 0 on
-#define DISK2_FDC_PHASE1_OFF    (0x02)  // turn stepper motor phase 1 off
-#define DISK2_FDC_PHASE1_ON     (0x03)  // turn stepper motor phase 1 on
-#define DISK2_FDC_PHASE2_OFF    (0x04)  // turn stepper motor phase 2 off
-#define DISK2_FDC_PHASE2_ON     (0x05)  // turn stepper motor phase 2 on
-#define DISK2_FDC_PHASE3_OFF    (0x06)  // turn stepper motor phase 3 off
-#define DISK2_FDC_PHASE3_ON     (0x07)  // turn stepper motor phase 3 on
-#define DISK2_FDC_MOTOR_OFF     (0x08)  // turn motor off
-#define DISK2_FDC_MOTOR_ON      (0x09)  // turn motor on
-#define DISK2_FDC_SELECT_DRIVE1 (0x0A)  // select drive 1
-#define DISK2_FDC_SELECT_DRIVE2 (0x0B)  // select drive 2
+#define DISK2_FDC_PHASE0_OFF    (0x00)  // Turn stepper motor phase 0 off
+#define DISK2_FDC_PHASE0_ON     (0x01)  // Turn stepper motor phase 0 on
+#define DISK2_FDC_PHASE1_OFF    (0x02)  // Turn stepper motor phase 1 off
+#define DISK2_FDC_PHASE1_ON     (0x03)  // Turn stepper motor phase 1 on
+#define DISK2_FDC_PHASE2_OFF    (0x04)  // Turn stepper motor phase 2 off
+#define DISK2_FDC_PHASE2_ON     (0x05)  // Turn stepper motor phase 2 on
+#define DISK2_FDC_PHASE3_OFF    (0x06)  // Turn stepper motor phase 3 off
+#define DISK2_FDC_PHASE3_ON     (0x07)  // Turn stepper motor phase 3 on
+#define DISK2_FDC_MOTOR_OFF     (0x08)  // Turn motor off
+#define DISK2_FDC_MOTOR_ON      (0x09)  // Turn motor on
+#define DISK2_FDC_SELECT_DRIVE1 (0x0A)  // Select drive 1
+#define DISK2_FDC_SELECT_DRIVE2 (0x0B)  // Select drive 2
 
 //  Q6      Q7      Function
 //  -------------------------------------------------
@@ -87,7 +87,7 @@ void disk2_fdc_snapshot_onsave(disk2_fdc_t* snapshot);
 void disk2_fdc_snapshot_onload(disk2_fdc_t* snapshot, disk2_fdc_t* sys);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
@@ -207,4 +207,4 @@ static void _disk2_fdc_process_soft_switches(disk2_fdc_t* sys, uint8_t addr) {
     }
 }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

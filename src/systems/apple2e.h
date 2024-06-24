@@ -1,64 +1,64 @@
 #pragma once
-/*#
-    # apple2e.h
 
-    An Apple //e emulator in a C header.
+// apple2e.h
+//
+// An Apple //e emulator in a C header.
+//
+// Do this:
+// ~~~C
+// #define CHIPS_IMPL
+// ~~~
+// before you include this file in *one* C or C++ file to create the
+// implementation.
+//
+// Optionally provide the following macros with your own implementation
+//
+// ~~~C
+// CHIPS_ASSERT(c)
+// ~~~
+//     your own assert macro (default: assert(c))
+//
+// You need to include the following headers before including apple2e.h:
+//
+// - chips/chips_common.h
+// - chips/wdc65C02cpu.h | chips/mos6502cpu.h
+// - chips/beeper.h
+// - chips/kbd.h
+// - chips/mem.h
+// - chips/clk.h
+// - devices/apple2_lc.h
+// - devices/disk2_fdd.h
+// - devices/disk2_fdc.h
+// - devices/apple2_fdc_rom.h
+// - devices/prodos_hdd.h
+// - devices/prodos_hdc.h
+// - devices/prodos_hdc_rom.h
+//
+// ## The Apple //e
+//
+//
+// TODO!
+//
+// ## Links
+//
+// ## zlib/libpng license
+//
+// Copyright (c) 2023 Veselin Sladkov
+// This software is provided 'as-is', without any express or implied warranty.
+// In no event will the authors be held liable for any damages arising from the
+// use of this software.
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//     1. The origin of this software must not be misrepresented; you must not
+//     claim that you wrote the original software. If you use this software in a
+//     product, an acknowledgment in the product documentation would be
+//     appreciated but is not required.
+//     2. Altered source versions must be plainly marked as such, and must not
+//     be misrepresented as being the original software.
+//     3. This notice may not be removed or altered from any source
+//     distribution.
 
-    Do this:
-    ~~~C
-    #define CHIPS_IMPL
-    ~~~
-    before you include this file in *one* C or C++ file to create the
-    implementation.
-
-    Optionally provide the following macros with your own implementation
-
-    ~~~C
-    CHIPS_ASSERT(c)
-    ~~~
-        your own assert macro (default: assert(c))
-
-    You need to include the following headers before including apple2e.h:
-
-    - chips/chips_common.h
-    - chips/wdc65C02cpu.h
-    - chips/beeper.h
-    - chips/kbd.h
-    - chips/mem.h
-    - chips/clk.h
-    - devices/apple2_lc.h
-    - devices/disk2_fdd.h
-    - devices/disk2_fdc.h
-    - devices/apple2_fdc_rom.h
-    - devices/prodos_hdd.h
-    - devices/prodos_hdc.h
-    - devices/prodos_hdc_rom.h
-
-    ## The Apple //e
-
-
-    TODO!
-
-    ## Links
-
-    ## zlib/libpng license
-
-    Copyright (c) 2023 Veselin Sladkov
-    This software is provided 'as-is', without any express or implied warranty.
-    In no event will the authors be held liable for any damages arising from the
-    use of this software.
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-        1. The origin of this software must not be misrepresented; you must not
-        claim that you wrote the original software. If you use this software in a
-        product, an acknowledgment in the product documentation would be
-        appreciated but is not required.
-        2. Altered source versions must be plainly marked as such, and must not
-        be misrepresented as being the original software.
-        3. This notice may not be removed or altered from any source
-        distribution.
-#*/
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -73,7 +73,7 @@ extern "C" {
 // Bump snapshot version when apple2e_t memory layout changes
 #define APPLE2E_SNAPSHOT_VERSION (1)
 
-#define APPLE2E_FREQUENCY             (1021800)
+#define APPLE2E_FREQUENCY (1021800)
 
 #define APPLE2E_SCREEN_WIDTH     560  // (280 * 2)
 #define APPLE2E_SCREEN_HEIGHT    192  // (192)
@@ -97,7 +97,7 @@ typedef struct {
 
 // Apple //e emulator state
 typedef struct {
-    // m6502_t cpu;
+    MOS6502CPU_T cpu;
     beeper_t beeper;
     kbd_t kbd;
     mem_t mem;
@@ -158,24 +158,24 @@ typedef struct {
 
 // Apple2e interface
 
-// initialize a new Apple2e instance
+// Initialize a new Apple2e instance
 void apple2e_init(apple2e_t *sys, const apple2e_desc_t *desc);
-// discard Apple2e instance
+// Discard Apple2e instance
 void apple2e_discard(apple2e_t *sys);
-// reset a Apple2e instance
+// Reset a Apple2e instance
 void apple2e_reset(apple2e_t *sys);
 
 void apple2e_tick(apple2e_t *sys);
 
-// tick Apple2e instance for a given number of microseconds, return number of executed ticks
+// Tick Apple2e instance for a given number of microseconds, return number of executed ticks
 uint32_t apple2e_exec(apple2e_t *sys, uint32_t micro_seconds);
-// send a key-down event to the Apple2e
+// Send a key-down event to the Apple2e
 void apple2e_key_down(apple2e_t *sys, int key_code);
-// send a key-up event to the Apple2e
+// Send a key-up event to the Apple2e
 void apple2e_key_up(apple2e_t *sys, int key_code);
-// take a snapshot, patches pointers to zero or offsets, returns snapshot version
+// Take a snapshot, patches pointers to zero or offsets, returns snapshot version
 uint32_t apple2e_save_snapshot(apple2e_t *sys, apple2e_t *dst);
-// load a snapshot, returns false if snapshot version doesn't match
+// Load a snapshot, returns false if snapshot version doesn't match
 bool apple2e_load_snapshot(apple2e_t *sys, uint32_t version, apple2e_t *src);
 
 void apple2e_screen_update(apple2e_t *sys);
@@ -209,11 +209,35 @@ static uint8_t __not_in_flash() _apple2e_artifact_color_lut[1<<7] = {
 
 extern bool msc_inquiry_complete;
 
+static inline uint32_t _apple2e_rotl4b(uint32_t n, uint32_t count) { return (n >> (-count & 3)) & 0xF; }
+
+static inline uint32_t _apple2e_rotl4(uint32_t n, uint32_t count) { return _apple2e_rotl4b(n * 0x11, count); }
+
+static uint16_t __not_in_flash() _apple2e_double_7_bits_lut[128];
+
+static void _apple2e_init_double_7_bits_lut() {
+    for (uint8_t bits = 0; bits < 128; ++bits) {
+        uint16_t result = 0;
+        for (int i = 6; i >= 0; i--) {
+            result <<= 1;
+            uint8_t bit = bits & (1 << i) ? 1 : 0;
+            result |= bit;
+            result <<= 1;
+            result |= bit;
+        }
+        _apple2e_double_7_bits_lut[bits] = result;
+    }
+}
+
+static inline uint16_t _apple2e_double_7_bits(uint8_t bits) { return _apple2e_double_7_bits_lut[bits]; }
+
 void apple2e_init(apple2e_t *sys, const apple2e_desc_t *desc) {
     CHIPS_ASSERT(sys && desc);
     if (desc->debug.callback.func) {
         CHIPS_ASSERT(desc->debug.stopped);
     }
+
+    _apple2e_init_double_7_bits_lut();
 
     memset(sys, 0, sizeof(apple2e_t));
     sys->valid = true;
@@ -230,9 +254,7 @@ void apple2e_init(apple2e_t *sys, const apple2e_desc_t *desc) {
     sys->fdc_rom = desc->roms.fdc_rom.ptr;
     sys->hdc_rom = desc->roms.hdc_rom.ptr;
 
-    // sys->pins = m6502_init(&sys->cpu, &(m6502_desc_t){0});
-
-    wdc65C02cpu_init();
+    MOS6502CPU_INIT(&sys->cpu, &(MOS6502CPU_DESC_T){0});
 
     beeper_init(&sys->beeper, &(beeper_desc_t){
                                   .tick_hz = APPLE2E_FREQUENCY,
@@ -296,7 +318,7 @@ void apple2e_reset(apple2e_t *sys) {
     if (sys->hdc.valid) {
         prodos_hdc_reset(&sys->hdc);
     }
-    wdc65C02cpu_reset();
+    MOS6502CPU_RESET(&sys->cpu);
 }
 
 typedef struct {
@@ -572,7 +594,7 @@ static void _apple2e_mem_c010_c01f_r(apple2e_t *sys, uint16_t addr) {
         default:
             break;
     }
-    wdc65C02cpu_set_data(data);
+    MOS6502CPU_SET_DATA(&sys->cpu, data);
 }
 
 static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
@@ -654,21 +676,21 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
         case 0x61:  // Open Apple
         case 0x69:
             if (rw) {
-                wdc65C02cpu_set_data(sys->open_apple_pressed ? 0x80 : 00);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->open_apple_pressed ? 0x80 : 00);
             }
             break;
 
         case 0x62:  // Solid Apple
         case 0x6A:
             if (rw) {
-                wdc65C02cpu_set_data(sys->solid_apple_pressed ? 0x80 : 00);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->solid_apple_pressed ? 0x80 : 00);
             }
             break;
 
         case 0x7E:
             if (rw) {
                 // read IOUDIS
-                wdc65C02cpu_set_data(sys->ioudis ? 0x00 : 0x80);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->ioudis ? 0x00 : 0x80);
             } else {
                 // IOUDISON
                 sys->ioudis = true;
@@ -678,7 +700,7 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
         case 0x7F:
             if (rw) {
                 // read DHIRES
-                wdc65C02cpu_set_data(sys->dhires ? 0x00 : 0x80);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->dhires ? 0x00 : 0x80);
             } else {
                 // IOUDISOFF
                 sys->ioudis = false;
@@ -689,7 +711,7 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
             if ((addr >= 0xC000) && (addr <= 0xC00F)) {
                 // Keyboard latch
                 if (rw) {
-                    wdc65C02cpu_set_data(sys->last_key_code);
+                    MOS6502CPU_SET_DATA(&sys->cpu, sys->last_key_code);
                 } else {
                     _apple2e_mem_c000_c00f_w(sys, addr);
                 }
@@ -704,25 +726,25 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
                 // 16K Language Card
                 _apple2e_lc_control(sys, addr & 0xF, rw);
                 if (rw) {
-                    wdc65C02cpu_set_data(0xFF);
+                    MOS6502CPU_SET_DATA(&sys->cpu, 0xFF);
                 }
             } else if ((addr >= 0xC0E0) && (addr <= 0xC0EF)) {
                 // Disk II FDC
                 if (rw) {
                     // Memory read
-                    wdc65C02cpu_set_data(sys->fdc.valid ? disk2_fdc_read_byte(&sys->fdc, addr & 0xF) : 0x00);
+                    MOS6502CPU_SET_DATA(&sys->cpu, sys->fdc.valid ? disk2_fdc_read_byte(&sys->fdc, addr & 0xF) : 0x00);
                 } else {
                     // Memory write
-                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, wdc65C02cpu_get_data());
+                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, MOS6502CPU_GET_DATA(&sys->cpu));
                 }
             } else if ((addr >= 0xC0F0) && (addr <= 0xC0FF)) {
                 // ProDOS HDC
                 if (rw) {
                     // Memory read
-                    wdc65C02cpu_set_data(sys->hdc.valid ? prodos_hdc_read_byte(&sys->hdc, addr & 0xF) : 0x00);
+                    MOS6502CPU_SET_DATA(&sys->cpu, sys->hdc.valid ? prodos_hdc_read_byte(&sys->hdc, addr & 0xF) : 0x00);
                 } else {
                     // Memory write
-                    prodos_hdc_write_byte(&sys->hdc, addr & 0xF, wdc65C02cpu_get_data(), &sys->mem);
+                    prodos_hdc_write_byte(&sys->hdc, addr & 0xF, MOS6502CPU_GET_DATA(&sys->cpu), &sys->mem);
                 }
             }
             break;
@@ -737,34 +759,34 @@ static void _apple2e_mem_rw(apple2e_t *sys, uint16_t addr, bool rw) {
         } else if ((addr >= 0xC300) && (addr <= 0xC3FF) && !sys->intcxrom) {
             if (rw) {
                 // Memory read
-                wdc65C02cpu_set_data(sys->slotc3rom ? 0x00 : mem_rd(&sys->mem, addr));
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->slotc3rom ? 0x00 : mem_rd(&sys->mem, addr));
             }
         } else if ((addr >= 0xC600) && (addr <= 0xC6FF) && !sys->intcxrom) {
             // Disk II boot rom
             if (rw) {
                 // Memory read
-                wdc65C02cpu_set_data(sys->fdc.valid ? sys->fdc_rom[addr & 0xFF] : 0x00);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->fdc.valid ? sys->fdc_rom[addr & 0xFF] : 0x00);
             }
         } else if ((addr >= 0xC700) && (addr <= 0xC7FF) && !sys->intcxrom) {
             // Hard disk boot rom
             if (rw) {
                 // Memory read
-                wdc65C02cpu_set_data(sys->hdc.valid ? sys->hdc_rom[addr & 0xFF] : 0x00);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->hdc.valid ? sys->hdc_rom[addr & 0xFF] : 0x00);
             }
         } else if ((addr >= 0xC100) && (addr <= 0xCFFF)) {
             if (rw) {
                 // Memory read
-                wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
+                MOS6502CPU_SET_DATA(&sys->cpu, mem_rd(&sys->mem, addr));
             }
         }
     } else {
         // Regular memory access
         if (rw) {
             // Memory read
-            wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
+            MOS6502CPU_SET_DATA(&sys->cpu, mem_rd(&sys->mem, addr));
         } else {
             // Memory write
-            mem_wr(&sys->mem, addr, wdc65C02cpu_get_data());
+            mem_wr(&sys->mem, addr, MOS6502CPU_GET_DATA(&sys->cpu));
             if (addr >= 0x400 && addr <= 0x7FF) {
                 sys->text_page1_dirty = true;
             } else if (addr >= 0x800 && addr <= 0xBFF) {
@@ -790,12 +812,9 @@ void apple2e_tick(apple2e_t *sys) {
         sys->vbl = false;
     }
 
-    uint16_t addr;
-    bool rw;
+    MOS6502CPU_TICK(&sys->cpu);
 
-    wdc65C02cpu_tick(&addr, &rw);
-
-    _apple2e_mem_rw(sys, addr, rw);
+    _apple2e_mem_rw(sys, sys->cpu.addr, sys->cpu.rw);
 
     // Update beeper
     if (beeper_tick(&sys->beeper)) {
@@ -1020,22 +1039,6 @@ bool apple2e_load_snapshot(apple2e_t *sys, uint32_t version, apple2e_t *src) {
     mem_snapshot_onload(&im.mem, sys);
     *sys = im;
     return true;
-}
-
-static inline uint32_t _apple2e_rotl4b(uint32_t n, uint32_t count) { return (n >> (-count & 3)) & 0xF; }
-
-static inline uint32_t _apple2e_rotl4(uint32_t n, uint32_t count) { return _apple2e_rotl4b(n * 0x11, count); }
-
-static uint16_t _apple2e_double_7_bits(uint8_t bits) {
-    uint16_t result = 0;
-    for (int i = 6; i >= 0; i--) {
-        result <<= 1;
-        uint8_t bit = bits & (1 << i) ? 1 : 0;
-        result |= bit;
-        result <<= 1;
-        result |= bit;
-    }
-    return result;
 }
 
 static void _apple2e_render_line_monochrome(uint8_t *out, uint16_t *in, int start_col, int stop_col) {

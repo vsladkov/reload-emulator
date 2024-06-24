@@ -1,12 +1,11 @@
-/*
-    oric.c
-*/
+//
+// oric.c
+//
 #define CHIPS_IMPL
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/time.h>
 
 #include <pico/platform.h>
 #include "pico/stdlib.h"
@@ -15,7 +14,11 @@
 #include "images/oric_images.h"
 
 #include "chips/chips_common.h"
+#ifdef OLIMEX_NEO6502
 #include "chips/wdc65C02cpu.h"
+#else
+#include "chips/mos6502cpu.h"
+#endif
 #include "chips/mos6522via.h"
 #include "chips/ay38910psg.h"
 #include "chips/kbd.h"
@@ -89,33 +92,21 @@ void app_init(void) {
     oric_init(&state.oric, &desc);
 }
 
+#ifdef OLIMEX_NEO6502
 // TMDS bit clock 295.2 MHz
 // DVDD 1.2V
 #define FRAME_WIDTH  800
 #define FRAME_HEIGHT 480
 #define VREG_VSEL    VREG_VOLTAGE_1_20
 #define DVI_TIMING   dvi_timing_800x480p_60hz
-
+#else
 // TMDS bit clock 372 MHz
 // DVDD 1.3V
-// #define FRAME_WIDTH  960
-// #define FRAME_HEIGHT 544
-// #define VREG_VSEL    VREG_VOLTAGE_1_30
-// #define DVI_TIMING   dvi_timing_960x544p_60hz
-
-// TMDS bit clock 400 MHz
-// DVDD 1.3V
-// #define FRAME_WIDTH  800
-// #define FRAME_HEIGHT 600
-// #define VREG_VSEL    VREG_VOLTAGE_1_30
-// #define DVI_TIMING   dvi_timing_800x600p_60hz
-
-// TMDS bit clock 252 MHz
-// DVDD 1.2V (1.1V seems ok too)
-// #define FRAME_WIDTH  640
-// #define FRAME_HEIGHT 480
-// #define VREG_VSEL    VREG_VOLTAGE_1_10
-// #define DVI_TIMING   dvi_timing_640x480p_60hz
+#define FRAME_WIDTH  960
+#define FRAME_HEIGHT 544
+#define VREG_VSEL    VREG_VOLTAGE_1_30
+#define DVI_TIMING   dvi_timing_960x544p_60hz
+#endif  // OLIMEX_NEO6502
 
 #define PALETTE_BITS 3
 #define PALETTE_SIZE (1 << PALETTE_BITS)
@@ -164,7 +155,7 @@ void kbd_raw_key_up(int code) {
     oric_key_up(&state.oric, code);
 }
 
-extern void oric_render_scanline_2x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
+// extern void oric_render_scanline_2x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 extern void oric_render_scanline_3x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 extern void copy_tmdsbuf(uint32_t *dest, const uint32_t *src);
 
@@ -259,9 +250,7 @@ int main() {
     app_init();
 
     while (1) {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        uint64_t start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+        uint32_t start_time_in_micros = time_us_32();
 
         uint32_t num_ticks = 19968;
         for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
@@ -272,8 +261,7 @@ int main() {
         kbd_update(&state.oric.kbd, 19968);
         tuh_task();
 
-        gettimeofday(&tv, NULL);
-        uint64_t end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+        uint32_t end_time_in_micros = time_us_32();
         uint32_t execution_time = end_time_in_micros - start_time_in_micros;
         // printf("%d us\n", execution_time);
 

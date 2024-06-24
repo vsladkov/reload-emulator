@@ -15,7 +15,7 @@ extern "C" {
 #define PRODOS_HDC_RC_Y (0x02)  // return code register Y
 #define PRODOS_HDC_PARA (0x07)  // paravirtualization trigger
 
-#define PRODOS_HDC_MAGIC (0x65)
+#define PRODOS_HDC_MAGIC      (0x65)
 #define PRODOS_HDC_MAX_DRIVES 2
 
 // ProDOS disk driver parameters
@@ -59,12 +59,12 @@ void prodos_hdc_snapshot_onsave(prodos_hdc_t* snapshot);
 void prodos_hdc_snapshot_onload(prodos_hdc_t* snapshot, prodos_hdc_t* sys);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
-#include <string.h>  // memcpy, memset
+#include <string.h>
 #ifndef CHIPS_ASSERT
 #include <assert.h>
 #define CHIPS_ASSERT(c) assert(c)
@@ -110,7 +110,7 @@ void prodos_hdc_write_byte(prodos_hdc_t* sys, uint8_t addr, uint8_t byte, mem_t*
     uint32_t blocks = prodos_hdd_get_blocks(hdd);
 
     uint16_t buffer = mem_rd16(mem, PRODOS_DRV_BUFFER);
-    uint16_t block  = mem_rd16(mem, PRODOS_DRV_BLOCK);
+    uint16_t block = mem_rd16(mem, PRODOS_DRV_BLOCK);
 
     switch (mem_rd(mem, PRODOS_DRV_COMMAND)) {
         case PRODOS_CMD_STATUS:
@@ -134,4 +134,4 @@ void prodos_hdc_snapshot_onsave(prodos_hdc_t* snapshot) { CHIPS_ASSERT(snapshot)
 
 void prodos_hdc_snapshot_onload(prodos_hdc_t* snapshot, prodos_hdc_t* sys) { CHIPS_ASSERT(snapshot && sys); }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

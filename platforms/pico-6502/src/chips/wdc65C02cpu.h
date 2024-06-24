@@ -1,27 +1,27 @@
 #pragma once
-/*
-    wdc65C02cpu.h    --
 
-    TODO: docs
+// wdc65C02cpu.h
+//
+// TODO: docs
+//
+// ## zlib/libpng license
+//
+// Copyright (c) 2023 Veselin Sladkov
+// This software is provided 'as-is', without any express or implied warranty.
+// In no event will the authors be held liable for any damages arising from the
+// use of this software.
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//     1. The origin of this software must not be misrepresented; you must not
+//     claim that you wrote the original software. If you use this software in a
+//     product, an acknowledgment in the product documentation would be
+//     appreciated but is not required.
+//     2. Altered source versions must be plainly marked as such, and must not
+//     be misrepresented as being the original software.
+//     3. This notice may not be removed or altered from any source
+//     distribution.
 
-    ## zlib/libpng license
-
-    Copyright (c) 2018 Andre Weissflog
-    This software is provided 'as-is', without any express or implied warranty.
-    In no event will the authors be held liable for any damages arising from the
-    use of this software.
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-        1. The origin of this software must not be misrepresented; you must not
-        claim that you wrote the original software. If you use this software in a
-        product, an acknowledgment in the product documentation would be
-        appreciated but is not required.
-        2. Altered source versions must be plainly marked as such, and must not
-        be misrepresented as being the original software.
-        3. This notice may not be removed or altered from any source
-        distribution.
-*/
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -29,17 +29,32 @@
 extern "C" {
 #endif
 
-// initialize cpu
+typedef struct {
+    uint16_t addr;
+    bool rw;  // Memory read or write access
+} wdc6502cpu_t;
+
+#define MOS6502CPU_T                 wdc6502cpu_t
+#define MOS6502CPU_INIT(c, desc)     wdc65C02cpu_init()
+#define MOS6502CPU_RESET(c)          wdc65C02cpu_reset()
+#define MOS6502CPU_NMI(c)            wdc65C02cpu_nmi()
+#define MOS6502CPU_TICK(c)           wdc65C02cpu_tick(c)
+#define MOS6502CPU_GET_ADDR(c)       wdc65C02cpu_get_addr()
+#define MOS6502CPU_GET_DATA(c)       wdc65C02cpu_get_data()
+#define MOS6502CPU_SET_DATA(c, data) wdc65C02cpu_set_data(data)
+#define MOS6502CPU_SET_IRQ(c, state) wdc65C02cpu_set_irq(state)
+
+// Initialize cpu
 void wdc65C02cpu_init();
-// reset cpu
+// Reset cpu
 void wdc65C02cpu_reset();
 
 void wdc65C02cpu_nmi();
 
-// tick the cpu
-void wdc65C02cpu_tick(uint16_t* addr, bool* rw);
+// Tick the cpu
+void wdc65C02cpu_tick(wdc6502cpu_t* c);
 
-uint16_t wdc65C02cpu_get_address();
+uint16_t wdc65C02cpu_get_addr();
 
 uint8_t wdc65C02cpu_get_data();
 
@@ -48,7 +63,7 @@ void wdc65C02cpu_set_data(uint8_t data);
 void wdc65C02cpu_set_irq(bool state);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
@@ -59,7 +74,7 @@ void wdc65C02cpu_set_irq(bool state);
 #define CHIPS_ASSERT(c) assert(c)
 #endif
 
-#ifdef PICO_NEO6502
+#ifdef OLIMEX_NEO6502
 #define _GPIO_MASK       (0xFF)
 #define _GPIO_SHIFT_BITS (0)
 #define _OE1_PIN         (8)
@@ -67,7 +82,6 @@ void wdc65C02cpu_set_irq(bool state);
 #define _OE3_PIN         (10)
 #define _RW_PIN          (11)
 #define _CLOCK_PIN       (21)
-#define _AUDIO_PIN       (20)
 #define _RESET_PIN       (26)
 #define _IRQ_PIN         (25)
 #define _NMI_PIN         (27)
@@ -79,10 +93,9 @@ void wdc65C02cpu_set_irq(bool state);
 #define _OE3_PIN         (20)
 #define _RW_PIN          (21)
 #define _CLOCK_PIN       (22)
-#define _AUDIO_PIN       (27)
 #define _RESET_PIN       (26)
 #define _IRQ_PIN         (28)
-#endif  // PICO_NEO6502
+#endif  // OLIMEX_NEO6502
 
 void wdc65C02cpu_init() {
     gpio_init_mask(_GPIO_MASK);
@@ -112,11 +125,11 @@ void wdc65C02cpu_init() {
     gpio_set_dir(_IRQ_PIN, GPIO_OUT);
     gpio_put(_IRQ_PIN, 1);
 
-#ifdef PICO_NEO6502
+#ifdef OLIMEX_NEO6502
     gpio_init(_NMI_PIN);  // NMI
     gpio_set_dir(_NMI_PIN, GPIO_OUT);
     gpio_put(_NMI_PIN, 1);
-#endif  // PICO_NEO6502
+#endif  // OLIMEX_NEO6502
 
     gpio_put(_RESET_PIN, 0);
     sleep_us(1000);
@@ -130,24 +143,23 @@ void wdc65C02cpu_reset() {
 }
 
 void wdc65C02cpu_nmi() {
-#ifdef PICO_NEO6502
+#ifdef OLIMEX_NEO6502
     gpio_put(_NMI_PIN, 0);
     sleep_us(1000);
     gpio_put(_NMI_PIN, 1);
-#endif  // PICO_NEO6502
+#endif  // OLIMEX_NEO6502
 }
 
-void wdc65C02cpu_tick(uint16_t* addr, bool* rw) {
+void wdc65C02cpu_tick(wdc6502cpu_t* c) {
     gpio_put(_CLOCK_PIN, 0);
 
-    *addr = wdc65C02cpu_get_address();
-
-    *rw = gpio_get(_RW_PIN);
+    c->addr = wdc65C02cpu_get_addr();
+    c->rw = gpio_get(_RW_PIN);
 
     gpio_put(_CLOCK_PIN, 1);
 }
 
-uint16_t wdc65C02cpu_get_address() {
+uint16_t wdc65C02cpu_get_addr() {
     gpio_set_dir_masked(_GPIO_MASK, 0);
 
     gpio_put(_OE1_PIN, 0);
@@ -157,7 +169,7 @@ uint16_t wdc65C02cpu_get_address() {
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
-#ifndef PICO_NEO6502
+#ifndef OLIMEX_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -173,7 +185,7 @@ uint16_t wdc65C02cpu_get_address() {
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
-#ifndef PICO_NEO6502
+#ifndef OLIMEX_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -197,7 +209,7 @@ uint8_t wdc65C02cpu_get_data() {
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
-#ifndef PICO_NEO6502
+#ifndef OLIMEX_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
     __asm volatile("nop\n");
@@ -216,7 +228,7 @@ void wdc65C02cpu_set_data(uint8_t data) {
 
     gpio_put_masked(_GPIO_MASK, data << _GPIO_SHIFT_BITS);
     gpio_put(_OE3_PIN, 0);
-#ifndef PICO_NEO6502
+#ifndef OLIMEX_NEO6502
     __asm volatile("nop\n");
     __asm volatile("nop\n");
 #endif
@@ -225,8 +237,6 @@ void wdc65C02cpu_set_data(uint8_t data) {
     // printf("set data: %02x\n", data);
 }
 
-void wdc65C02cpu_set_irq(bool state) {
-    gpio_put(_IRQ_PIN, state ? 0 : 1);
-}
+void wdc65C02cpu_set_irq(bool state) { gpio_put(_IRQ_PIN, state ? 0 : 1); }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

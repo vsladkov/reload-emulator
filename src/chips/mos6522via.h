@@ -9,23 +9,23 @@
 extern "C" {
 #endif
 
-// register indices
-#define MOS6522VIA_REG_RB     (0)  /* input/output register B */
-#define MOS6522VIA_REG_RA     (1)  /* input/output register A */
-#define MOS6522VIA_REG_DDRB   (2)  /* data direction B */
-#define MOS6522VIA_REG_DDRA   (3)  /* data direction A */
-#define MOS6522VIA_REG_T1CL   (4)  /* T1 low-order latch / counter */
-#define MOS6522VIA_REG_T1CH   (5)  /* T1 high-order counter */
-#define MOS6522VIA_REG_T1LL   (6)  /* T1 low-order latches */
-#define MOS6522VIA_REG_T1LH   (7)  /* T1 high-order latches */
-#define MOS6522VIA_REG_T2CL   (8)  /* T2 low-order latch / counter */
-#define MOS6522VIA_REG_T2CH   (9)  /* T2 high-order counter */
-#define MOS6522VIA_REG_SR     (10) /* shift register */
-#define MOS6522VIA_REG_ACR    (11) /* auxiliary control register */
-#define MOS6522VIA_REG_PCR    (12) /* peripheral control register */
-#define MOS6522VIA_REG_IFR    (13) /* interrupt flag register */
-#define MOS6522VIA_REG_IER    (14) /* interrupt enable register */
-#define MOS6522VIA_REG_RA_NOH (15) /* input/output A without handshake */
+// Register indices
+#define MOS6522VIA_REG_RB     (0)   // Input / output register B
+#define MOS6522VIA_REG_RA     (1)   // Input / output register A
+#define MOS6522VIA_REG_DDRB   (2)   // Data direction B
+#define MOS6522VIA_REG_DDRA   (3)   // Data direction A
+#define MOS6522VIA_REG_T1CL   (4)   // T1 low-order latch / counter
+#define MOS6522VIA_REG_T1CH   (5)   // T1 high-order counter
+#define MOS6522VIA_REG_T1LL   (6)   // T1 low-order latches
+#define MOS6522VIA_REG_T1LH   (7)   // T1 high-order latches
+#define MOS6522VIA_REG_T2CL   (8)   // T2 low-order latch / counter
+#define MOS6522VIA_REG_T2CH   (9)   // T2 high-order counter
+#define MOS6522VIA_REG_SR     (10)  // Shift register
+#define MOS6522VIA_REG_ACR    (11)  // Auxiliary control register
+#define MOS6522VIA_REG_PCR    (12)  // Peripheral control register
+#define MOS6522VIA_REG_IFR    (13)  // Interrupt flag register
+#define MOS6522VIA_REG_IER    (14)  // Interrupt enable register
+#define MOS6522VIA_REG_RA_NOH (15)  // Input / output A without handshake
 
 // PCR test macros (MAME naming)
 #define MOS6522VIA_PCR_CA1_LOW_TO_HIGH(c)  (c->pcr & 0x01)
@@ -68,7 +68,7 @@ extern "C" {
 #define MOS6522VIA_ACR_T1_CONTINUOUS(c)   (c->acr & 0x40)
 #define MOS6522VIA_ACR_T2_COUNT_PB6(c)    (c->acr & 0x20)
 
-// interrupt bits
+// Interrupt bits
 #define MOS6522VIA_IRQ_CA2 (1 << 0)
 #define MOS6522VIA_IRQ_CA1 (1 << 1)
 #define MOS6522VIA_IRQ_SR  (1 << 2)
@@ -78,7 +78,7 @@ extern "C" {
 #define MOS6522VIA_IRQ_T1  (1 << 6)
 #define MOS6522VIA_IRQ_ANY (1 << 7)
 
-// delay-pipeline bit offsets
+// Delay-pipeline bit offsets
 #define MOS6522VIA_PIP_TIMER_COUNT (0)
 #define MOS6522VIA_PIP_TIMER_LOAD  (8)
 #define MOS6522VIA_PIP_IRQ         (0)
@@ -96,43 +96,43 @@ typedef struct {
     bool c2_triggered;
 } mos6522via_port_t;
 
-// timer state
+// Timer state
 typedef struct {
-    uint16_t latch;   /* 16-bit initial value latch, NOTE: T2 only has an 8-bit latch */
-    int32_t counter; /* 16-bit counter */
-    bool t_bit;       /* toggles between true and false when counter underflows */
-    bool t_out;       /* true for 1 cycle when counter underflow */
-    /* merged delay-pipelines:
-        2-cycle 'counter active':   bits 0..7
-        1-cycle 'force load':       bits 8..16
-    */
+    uint16_t latch;   // 16-bit initial value latch, NOTE: T2 only has an 8-bit latch
+    int32_t counter;  // 16-bit counter
+    bool t_bit;       // Toggles between true and false when counter underflows
+    bool t_out;       // True for 1 cycle when counter underflow
+
+    // Merged delay-pipelines:
+    //   2-cycle 'counter active':   bits 0..7
+    //   1-cycle 'force load':       bits 8..16
     uint16_t pip;
 } mos6522via_timer_t;
 
-// interrupt state (same as mos6522via_int_t)
+// Interrupt state (same as mos6522via_int_t)
 typedef struct {
-    uint8_t ier; /* interrupt enable register */
-    uint8_t ifr; /* interrupt flag register */
+    uint8_t ier;  // interrupt enable register
+    uint8_t ifr;  // interrupt flag register
     uint16_t pip;
 } mos6522via_int_t;
 
-// mos6522via state
+// Internal mos6522via state
 typedef struct {
     mos6522via_port_t pa;
     mos6522via_port_t pb;
     mos6522via_timer_t t1;
     mos6522via_timer_t t2;
     mos6522via_int_t intr;
-    uint8_t acr; /* auxilary control register */
-    uint8_t pcr; /* peripheral control register */
+    uint8_t acr;  // Auxilary control register
+    uint8_t pcr;  // Peripheral control register
     bool pb6_triggered;
 } mos6522via_t;
 
-// initialize a new 6522 instance
+// Initialize a new 6522 instance
 void mos6522via_init(mos6522via_t* c);
-// reset an existing 6522 instance
+// Reset an existing 6522 instance
 void mos6522via_reset(mos6522via_t* c);
-// tick the mos6522via
+// Tick the mos6522via
 bool mos6522via_tick(mos6522via_t* c, uint8_t cycles);
 
 uint8_t mos6522via_read(mos6522via_t* c, uint8_t addr);
@@ -188,7 +188,7 @@ static void _mos6522via_init_port(mos6522via_port_t* p) {
 }
 
 static void _mos6522via_init_timer(mos6522via_timer_t* t, bool is_reset) {
-    /* counters and latches are not initialized at reset */
+    // Counters and latches are not initialized at reset
     if (!is_reset) {
         t->latch = 0xFFFF;
         t->counter = 0;
@@ -219,12 +219,10 @@ void mos6522via_init(mos6522via_t* c) {
     c->pb6_triggered = false;
 }
 
-/*
-    "The RESET input clears all internal registers to logic 0,
-    (except T1, T2 and SR). This places all peripheral interface lines
-    in the input state, disables the timers, shift registers etc. and
-    disables interrupting from the chip"
-*/
+// "The RESET input clears all internal registers to logic 0,
+// (except T1, T2 and SR). This places all peripheral interface lines
+// in the input state, disables the timers, shift registers etc. and
+// disables interrupting from the chip"
 void mos6522via_reset(mos6522via_t* c) {
     CHIPS_ASSERT(c);
     _mos6522via_init_port(&c->pa);
@@ -237,18 +235,17 @@ void mos6522via_reset(mos6522via_t* c) {
     c->pb6_triggered = false;
 }
 
-/*--- delay-pipeline macros ---*/
-/* set or clear a new state at pipeline pos */
+// Delay pipeline macros
+// Set or clear a new state at pipeline pos
 #define _MOS6522VIA_PIP_SET(pip, offset, pos) \
     { pip |= (1 << (offset + pos)); }
 #define _MOS6522VIA_PIP_CLR(pip, offset, pos) \
     { pip &= ~(1 << (offset + pos)); }
-/* reset an entire pipeline */
+// Reset an entire pipeline
 #define _MOS6522VIA_PIP_RESET(pip, offset) \
     { pip &= ~(0xFF << offset); }
-/* test pipeline state, pos 0 is the 'output bit' */
+// Test pipeline state, pos 0 is the 'output bit'
 #define _MOS6522VIA_PIP_TEST(pip, offset, pos) (0 != (pip & (1 << (offset + pos))))
-
 
 static inline uint8_t _mos6522via_merge_pb7(mos6522via_t* c, uint8_t data) {
     if (MOS6522VIA_ACR_T1_SET_PB7(c)) {
@@ -264,10 +261,10 @@ static inline void _mos6522via_set_intr(mos6522via_t* c, uint8_t data) { c->intr
 
 static inline void _mos6522via_clear_intr(mos6522via_t* c, uint8_t data) {
     c->intr.ifr &= ~data;
-    /* clear main interrupt flag? */
+    // Clear main interrupt flag?
     if (0 == (c->intr.ifr & c->intr.ier & 0x7F)) {
         c->intr.ifr &= 0x7F;
-        /* cancel any interrupts in the delay pipeline */
+        // Cancel any interrupts in the delay pipeline
         _MOS6522VIA_PIP_RESET(c->intr.pip, MOS6522VIA_PIP_IRQ);
     }
 }
@@ -295,30 +292,29 @@ static inline void _mos6522via_write_ifr(mos6522via_t* c, uint8_t data) {
     _mos6522via_clear_intr(c, data);
 }
 
-/*
-    On timer behaviour:
+// On timer behaviour:
+//
+// http://forum.6502.org/viewtopic.php?f=4&t=2901
+//
+// (essentially: T1 is always reloaded from latch, both in continuous
+// and oneshot mode, while T2 is never reloaded)
 
-    http://forum.6502.org/viewtopic.php?f=4&t=2901
-
-    (essentially: T1 is always reloaded from latch, both in continuous
-    and oneshot mode, while T2 is never reloaded)
-*/
 static void _mos6522via_tick_t1(mos6522via_t* c, uint8_t cycles) {
     mos6522via_timer_t* t = &c->t1;
 
-    /* decrement counter? */
+    // Decrement counter
     if (_MOS6522VIA_PIP_TEST(t->pip, MOS6522VIA_PIP_TIMER_COUNT, 0)) {
         t->counter -= cycles;
     }
 
-    /* timer underflow? */
+    // Timer underflow
     t->t_out = (t->counter < 0);
     if (t->t_out) {
         t->counter = 0xFFFF;
-        /* continuous or oneshot mode? */
+        // Continuous or oneshot mode
         if (MOS6522VIA_ACR_T1_CONTINUOUS(c)) {
             t->t_bit = !t->t_bit;
-            /* trigger T1 interrupt on each underflow */
+            // Trigger T1 interrupt on each underflow
             _mos6522via_set_intr(c, MOS6522VIA_IRQ_T1);
 
             _MOS6522VIA_PIP_SET(t->pip, MOS6522VIA_PIP_TIMER_LOAD, 1);
@@ -329,13 +325,12 @@ static void _mos6522via_tick_t1(mos6522via_t* c, uint8_t cycles) {
                 t->t_bit = true;
             }
         }
-        /* reload T1 from latch on each underflow,
-           this happens both in oneshot and continous mode
-        */
+        // Reload T1 from latch on each underflow,
+        // this happens both in oneshot and continous mode
         // _MOS6522VIA_PIP_SET(t->pip, MOS6522VIA_PIP_TIMER_LOAD, 1);
     }
 
-    /* reload timer from latch? */
+    // Reload timer from latch
     if (_MOS6522VIA_PIP_TEST(t->pip, MOS6522VIA_PIP_TIMER_LOAD, 0)) {
         t->counter = t->latch;
     }
@@ -344,9 +339,9 @@ static void _mos6522via_tick_t1(mos6522via_t* c, uint8_t cycles) {
 static void _mos6522via_tick_t2(mos6522via_t* c, uint8_t cycles) {
     mos6522via_timer_t* t = &c->t2;
 
-    /* either decrement on PB6, or on tick */
+    // Either decrement on PB6, or on tick
     if (MOS6522VIA_ACR_T2_COUNT_PB6(c)) {
-        /* count falling edge of PB6 */
+        // Count falling edge of PB6
         if (c->pb6_triggered) {
             t->counter--;
         }
@@ -354,31 +349,31 @@ static void _mos6522via_tick_t2(mos6522via_t* c, uint8_t cycles) {
         t->counter -= cycles;
     }
 
-    /* underflow? */
+    // Underflow?
     t->t_out = (t->counter < 0);
     if (t->t_out) {
         t->counter = 0xFFFF;
-        /* t2 is always oneshot */
+        // t2 is always oneshot
         if (!t->t_bit) {
-            /* FIXME: 6526-style "Timer B Bug"? */
+            // FIXME: 6526-style "Timer B Bug"
             _mos6522via_set_intr(c, MOS6522VIA_IRQ_T2);
             t->t_bit = true;
         }
-        /* NOTE: T2 never reloads from latch on hitting zero */
+        // NOTE: T2 never reloads from latch on hitting zero
     }
 }
 
 static void _mos6522via_tick_pipeline(mos6522via_t* c) {
-    /* feed counter pipelines, both counters are always counting */
+    // Feed counter pipelines, both counters are always counting
     _MOS6522VIA_PIP_SET(c->t1.pip, MOS6522VIA_PIP_TIMER_COUNT, 2);
     _MOS6522VIA_PIP_SET(c->t2.pip, MOS6522VIA_PIP_TIMER_COUNT, 2);
 
-    /* interrupt pipeline */
+    // Interrupt pipeline
     if (c->intr.ifr & c->intr.ier) {
         _MOS6522VIA_PIP_SET(c->intr.pip, MOS6522VIA_PIP_IRQ, 1);
     }
 
-    /* tick pipelines forward */
+    // Tick pipelines forward
     c->t1.pip = (c->t1.pip >> 1) & 0x7F7F;
     c->t2.pip = (c->t2.pip >> 1) & 0x7F7F;
     c->intr.pip = (c->intr.pip >> 1) & 0x7F7F;
@@ -407,7 +402,7 @@ static void _mos6522via_update_cab(mos6522via_t* c) {
 }
 
 static bool _mos6522via_update_irq(mos6522via_t* c) {
-    /* main interrupt bit (delayed by pip) */
+    // Main interrupt bit (delayed by pip)
     if (_MOS6522VIA_PIP_TEST(c->intr.pip, MOS6522VIA_PIP_IRQ, 0)) {
         c->intr.ifr |= (1 << 7);
     }
@@ -419,7 +414,7 @@ static bool _mos6522via_update_irq(mos6522via_t* c) {
     return false;
 }
 
-/* perform a tick */
+// Perform a tick
 bool mos6522via_tick(mos6522via_t* c, uint8_t cycles) {
     _mos6522via_update_cab(c);
     _mos6522via_tick_t1(c, cycles);
@@ -429,7 +424,7 @@ bool mos6522via_tick(mos6522via_t* c, uint8_t cycles) {
     return irq;
 }
 
-/* read a register */
+// Read a register
 uint8_t mos6522via_read(mos6522via_t* c, uint8_t reg) {
     uint8_t data = 0;
     switch (reg) {
@@ -522,7 +517,7 @@ uint8_t mos6522via_read(mos6522via_t* c, uint8_t reg) {
     return data;
 }
 
-/* write a register */
+// Write a register
 void mos6522via_write(mos6522via_t* c, uint8_t reg, uint8_t data) {
     switch (reg) {
         case MOS6522VIA_REG_RB:
@@ -624,12 +619,10 @@ void mos6522via_write(mos6522via_t* c, uint8_t reg, uint8_t data) {
     }
 }
 
-uint8_t mos6522via_get_pa(mos6522via_t* c) {
-    return (c->pa.inpr & ~c->pa.ddr) | (c->pa.outr & c->pa.ddr);
-}
+uint8_t mos6522via_get_pa(mos6522via_t* c) { return (c->pa.inpr & ~c->pa.ddr) | (c->pa.outr & c->pa.ddr); }
 
 void mos6522via_set_pa(mos6522via_t* c, uint8_t data) {
-    /* with latching enabled, only update input register when CA1 goes active */
+    // With latching enabled, only update input register when CA1 goes active
     if (MOS6522VIA_ACR_PA_LATCH_ENABLE(c)) {
         if (c->pa.c1_triggered) {
             c->pa.inpr = data;
@@ -661,7 +654,7 @@ uint8_t mos6522via_get_pb(mos6522via_t* c) {
 
 void mos6522via_set_pb(mos6522via_t* c, uint8_t data) {
     c->pb6_triggered = (c->pb.inpr & 0x40) && ((data & 0x40) == 0);
-    /* with latching enabled, only update input register when CB1 goes active */
+    // With latching enabled, only update input register when CB1 goes active
     if (MOS6522VIA_ACR_PB_LATCH_ENABLE(c)) {
         if (c->pb.c1_triggered) {
             c->pb.inpr = data;
@@ -687,4 +680,4 @@ void mos6522via_set_cb2(mos6522via_t* c, bool state) {
     c->pb.c2_in = state;
 }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

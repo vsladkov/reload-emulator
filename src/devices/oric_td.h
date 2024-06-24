@@ -69,7 +69,7 @@ void oric_td_snapshot_onsave(oric_td_t* snapshot);
 void oric_td_snapshot_onload(oric_td_t* snapshot, oric_td_t* sys);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
@@ -172,4 +172,4 @@ void oric_td_snapshot_onload(oric_td_t* snapshot, oric_td_t* sys) {
     snapshot->port = sys->port;
 }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

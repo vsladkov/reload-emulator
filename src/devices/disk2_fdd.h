@@ -71,12 +71,12 @@ uint8_t disk2_fdd_read_byte(disk2_fdd_t* sys);
 void disk2_fdd_write_byte(disk2_fdd_t* sys, uint8_t byte);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
-#include <string.h>  // memcpy, memset
+#include <string.h>
 #ifndef CHIPS_ASSERT
 #include <assert.h>
 #define CHIPS_ASSERT(c) assert(c)
@@ -194,4 +194,4 @@ void disk2_fdd_write_byte(disk2_fdd_t* sys, uint8_t byte) {
     }
 }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

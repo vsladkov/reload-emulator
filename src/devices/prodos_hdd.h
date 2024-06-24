@@ -66,12 +66,12 @@ uint8_t prodos_hdd_read_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block
 uint8_t prodos_hdd_write_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block, mem_t* mem);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}  // extern "C"
 #endif
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
-#include <string.h>  // memcpy, memset
+#include <string.h>
 #ifndef CHIPS_ASSERT
 #include <assert.h>
 #define CHIPS_ASSERT(c) assert(c)
@@ -195,4 +195,4 @@ uint8_t prodos_hdd_write_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t bloc
     return PRODOS_HDD_ERR_OK;
 }
 
-#endif /* CHIPS_IMPL */
+#endif  // CHIPS_IMPL

@@ -1,6 +1,7 @@
-/*
-    apple2e.c
-*/
+//
+// apple2e.c
+//
+
 #define CHIPS_IMPL
 #define MEM_PAGE_SHIFT (9U)
 
@@ -8,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/time.h>
 
 #include <pico/platform.h>
 #include "pico/stdlib.h"
@@ -22,7 +22,11 @@
 #include "ff.h"
 
 #include "chips/chips_common.h"
+#ifdef OLIMEX_NEO6502
 #include "chips/wdc65C02cpu.h"
+#else
+#include "chips/mos6502cpu.h"
+#endif
 #include "chips/beeper.h"
 #include "chips/kbd.h"
 #include "chips/mem.h"
@@ -99,19 +103,21 @@ void app_init(void) {
     apple2e_init(&state.apple2e, &desc);
 }
 
-// TMDS bit clock 400 MHz
-// DVDD 1.3V
-// #define FRAME_WIDTH  800
-// #define FRAME_HEIGHT 600
-// #define VREG_VSEL    VREG_VOLTAGE_1_30
-// #define DVI_TIMING   dvi_timing_800x600p_60hz
-
+#ifdef OLIMEX_NEO6502
 // TMDS bit clock 252 MHz
 // DVDD 1.2V (1.1V seems ok too)
 #define FRAME_WIDTH  640
 #define FRAME_HEIGHT 480
 #define VREG_VSEL    VREG_VOLTAGE_1_10
 #define DVI_TIMING   dvi_timing_640x480p_60hz
+#else
+// TMDS bit clock 400 MHz
+// DVDD 1.3V
+#define FRAME_WIDTH  800
+#define FRAME_HEIGHT 600
+#define VREG_VSEL    VREG_VOLTAGE_1_30
+#define DVI_TIMING   dvi_timing_800x600p_60hz
+#endif  // OLIMEX_NEO6502
 
 #define PALETTE_BITS 4
 #define PALETTE_SIZE (1 << PALETTE_BITS)
@@ -265,9 +271,7 @@ int main() {
     app_init();
 
     while (1) {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        uint64_t start_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+        uint32_t start_time_in_micros = time_us_32();
 
         uint32_t num_ticks = 17030;
         for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
@@ -277,8 +281,7 @@ int main() {
         apple2e_screen_update(&state.apple2e);
         tuh_task();
 
-        gettimeofday(&tv, NULL);
-        uint64_t end_time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+        uint32_t end_time_in_micros = time_us_32();
         uint32_t execution_time = end_time_in_micros - start_time_in_micros;
         // printf("%d us\n", execution_time);
 

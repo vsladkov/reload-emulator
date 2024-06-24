@@ -27,13 +27,13 @@
 // CFG_TUSB_DEBUG is defined by compiler in DEBUG build
 // #define CFG_TUSB_DEBUG           0
 
-/* USB DMA on some MCUs can only access a specific SRAM region with restriction on alignment.
- * Tinyusb use follows macros to declare transferring memory so that they can be put
- * into those specific section.
- * e.g
- * - CFG_TUSB_MEM SECTION : __attribute__ (( section(".usb_ram") ))
- * - CFG_TUSB_MEM_ALIGN   : __attribute__ ((aligned(4)))
- */
+// USB DMA on some MCUs can only access a specific SRAM region with restriction on alignment.
+// Tinyusb use follows macros to declare transferring memory so that they can be put
+// into those specific section.
+// e.g
+// - CFG_TUSB_MEM SECTION : __attribute__ (( section(".usb_ram") ))
+// - CFG_TUSB_MEM_ALIGN   : __attribute__ ((aligned(4)))
+
 #ifndef CFG_TUSB_MEM_SECTION
 #define CFG_TUSB_MEM_SECTION
 #endif
@@ -51,13 +51,13 @@
 
 #define CFG_TUH_HUB                 1
 #define CFG_TUH_CDC                 0
-#define CFG_TUH_HID                 4 // typical keyboard + mouse device can have 3-4 HID interfaces
-#define CFG_TUH_MIDI                0 // there will be at most one MIDIStreaming Interface descriptor
+#define CFG_TUH_HID                 4 // Typical keyboard + mouse device can have 3-4 HID interfaces
+#define CFG_TUH_MIDI                0 // There will be at most one MIDIStreaming Interface descriptor
 #define CFG_TUH_MSC                 1
 #define CFG_TUH_VENDOR              0
 
-// max device support (excluding hub device)
-#define CFG_TUH_DEVICE_MAX          (CFG_TUH_HUB ? 5 : 1) // hub typically has 4 ports
+// Max device support (excluding hub device)
+#define CFG_TUH_DEVICE_MAX          (CFG_TUH_HUB ? 5 : 1) // Hub typically has 4 ports
 
 //------------- HID -------------//
 #define CFG_TUH_HID_EPIN_BUFSIZE    64
@@ -67,4 +67,4 @@
  }
 #endif
 
-#endif /* _TUSB_CONFIG_H_ */
+#endif // _TUSB_CONFIG_H_

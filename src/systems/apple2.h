@@ -1,64 +1,64 @@
 #pragma once
-/*#
-    # apple2.h
 
-    An Apple ][ emulator in a C header.
+// apple2.h
+//
+// An Apple ][ emulator in a C header.
+//
+// Do this:
+// ~~~C
+// #define CHIPS_IMPL
+// ~~~
+// before you include this file in *one* C or C++ file to create the
+// implementation.
+//
+// Optionally provide the following macros with your own implementation
+//
+// ~~~C
+// CHIPS_ASSERT(c)
+// ~~~
+//     your own assert macro (default: assert(c))
+//
+// You need to include the following headers before including apple2.h:
+//
+// - chips/chips_common.h
+// - chips/wdc65C02cpu.h | chips/mos6502cpu.h
+// - chips/beeper.h
+// - chips/kbd.h
+// - chips/mem.h
+// - chips/clk.h
+// - devices/apple2_lc.h
+// - devices/disk2_fdd.h
+// - devices/disk2_fdc.h
+// - devices/apple2_fdc_rom.h
+// - devices/prodos_hdd.h
+// - devices/prodos_hdc.h
+// - devices/prodos_hdc_rom.h
+//
+// ## The Apple ][
+//
+//
+// TODO!
+//
+// ## Links
+//
+// ## zlib/libpng license
+//
+// Copyright (c) 2023 Veselin Sladkov
+// This software is provided 'as-is', without any express or implied warranty.
+// In no event will the authors be held liable for any damages arising from the
+// use of this software.
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//     1. The origin of this software must not be misrepresented; you must not
+//     claim that you wrote the original software. If you use this software in a
+//     product, an acknowledgment in the product documentation would be
+//     appreciated but is not required.
+//     2. Altered source versions must be plainly marked as such, and must not
+//     be misrepresented as being the original software.
+//     3. This notice may not be removed or altered from any source
+//     distribution.
 
-    Do this:
-    ~~~C
-    #define CHIPS_IMPL
-    ~~~
-    before you include this file in *one* C or C++ file to create the
-    implementation.
-
-    Optionally provide the following macros with your own implementation
-
-    ~~~C
-    CHIPS_ASSERT(c)
-    ~~~
-        your own assert macro (default: assert(c))
-
-    You need to include the following headers before including apple2.h:
-
-    - chips/chips_common.h
-    - chips/wdc65C02cpu.h
-    - chips/beeper.h
-    - chips/kbd.h
-    - chips/mem.h
-    - chips/clk.h
-    - devices/apple2_lc.h
-    - devices/disk2_fdd.h
-    - devices/disk2_fdc.h
-    - devices/apple2_fdc_rom.h
-    - devices/prodos_hdd.h
-    - devices/prodos_hdc.h
-    - devices/prodos_hdc_rom.h
-
-    ## The Apple ][
-
-
-    TODO!
-
-    ## Links
-
-    ## zlib/libpng license
-
-    Copyright (c) 2023 Veselin Sladkov
-    This software is provided 'as-is', without any express or implied warranty.
-    In no event will the authors be held liable for any damages arising from the
-    use of this software.
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-        1. The origin of this software must not be misrepresented; you must not
-        claim that you wrote the original software. If you use this software in a
-        product, an acknowledgment in the product documentation would be
-        appreciated but is not required.
-        2. Altered source versions must be plainly marked as such, and must not
-        be misrepresented as being the original software.
-        3. This notice may not be removed or altered from any source
-        distribution.
-#*/
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -73,7 +73,7 @@ extern "C" {
 // Bump snapshot version when apple2_t memory layout changes
 #define APPLE2_SNAPSHOT_VERSION (1)
 
-#define APPLE2_FREQUENCY             (1021800)
+#define APPLE2_FREQUENCY (1021800)
 
 #define APPLE2_SCREEN_WIDTH     560  // (280 * 2)
 #define APPLE2_SCREEN_HEIGHT    192  // (192)
@@ -96,7 +96,7 @@ typedef struct {
 
 // Apple II emulator state
 typedef struct {
-    // m6502_t cpu;
+    MOS6502CPU_T cpu;
     beeper_t beeper;
     kbd_t kbd;
     mem_t mem;
@@ -139,24 +139,24 @@ typedef struct {
 
 // Apple2 interface
 
-// initialize a new Apple2 instance
+// Initialize a new Apple2 instance
 void apple2_init(apple2_t *sys, const apple2_desc_t *desc);
-// discard Apple2 instance
+// Discard Apple2 instance
 void apple2_discard(apple2_t *sys);
-// reset a Apple2 instance
+// Reset a Apple2 instance
 void apple2_reset(apple2_t *sys);
 
 void apple2_tick(apple2_t *sys);
 
-// tick Apple2 instance for a given number of microseconds, return number of executed ticks
+// Tick Apple2 instance for a given number of microseconds, return number of executed ticks
 uint32_t apple2_exec(apple2_t *sys, uint32_t micro_seconds);
-// send a key-down event to the Apple2
+// Send a key-down event to the Apple2
 void apple2_key_down(apple2_t *sys, int key_code);
-// send a key-up event to the Apple2
+// Send a key-up event to the Apple2
 void apple2_key_up(apple2_t *sys, int key_code);
-// take a snapshot, patches pointers to zero or offsets, returns snapshot version
+// Take a snapshot, patches pointers to zero or offsets, returns snapshot version
 uint32_t apple2_save_snapshot(apple2_t *sys, apple2_t *dst);
-// load a snapshot, returns false if snapshot version doesn't match
+// Load a snapshot, returns false if snapshot version doesn't match
 bool apple2_load_snapshot(apple2_t *sys, uint32_t version, apple2_t *src);
 
 void apple2_screen_update(apple2_t *sys);
@@ -167,7 +167,7 @@ void apple2_screen_update(apple2_t *sys);
 
 /*-- IMPLEMENTATION ----------------------------------------------------------*/
 #ifdef CHIPS_IMPL
-#include <string.h> /* memcpy, memset */
+#include <string.h>
 #ifndef CHIPS_ASSERT
 #include <assert.h>
 #define CHIPS_ASSERT(c) assert(c)
@@ -190,11 +190,43 @@ static uint8_t __not_in_flash() _apple2_artifact_color_lut[1<<7] = {
 
 extern bool msc_inquiry_complete;
 
+static inline uint32_t _apple2_rotl4b(uint32_t n, uint32_t count) { return (n >> (-count & 3)) & 0xF; }
+
+static uint16_t __not_in_flash() _apple2_double_7_bits_lut[128];
+
+static void _apple2_init_double_7_bits_lut() {
+    for (uint8_t bits = 0; bits < 128; ++bits) {
+        uint16_t result = 0;
+        for (int i = 6; i >= 0; i--) {
+            result <<= 1;
+            uint8_t bit = bits & (1 << i) ? 1 : 0;
+            result |= bit;
+            result <<= 1;
+            result |= bit;
+        }
+        _apple2_double_7_bits_lut[bits] = result;
+    }
+}
+
+static inline uint16_t _apple2_double_7_bits(uint8_t bits) { return _apple2_double_7_bits_lut[bits]; }
+
+static inline uint8_t _apple2_reverse_7_bits(uint8_t bits) {
+    uint8_t result = 0;
+    for (int i = 0; i < 7; i++) {
+        result <<= 1;
+        result |= bits & 1;
+        bits >>= 1;
+    }
+    return result;
+}
+
 void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     CHIPS_ASSERT(sys && desc);
     if (desc->debug.callback.func) {
         CHIPS_ASSERT(desc->debug.stopped);
     }
+
+    _apple2_init_double_7_bits_lut();
 
     memset(sys, 0, sizeof(apple2_t));
     sys->valid = true;
@@ -210,9 +242,7 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     sys->fdc_rom = desc->roms.fdc_rom.ptr;
     sys->hdc_rom = desc->roms.hdc_rom.ptr;
 
-    // sys->pins = m6502_init(&sys->cpu, &(m6502_desc_t){0});
-
-    wdc65C02cpu_init();
+    MOS6502CPU_INIT(&sys->cpu, &(MOS6502CPU_DESC_T){0});
 
     beeper_init(&sys->beeper, &(beeper_desc_t){
                                   .tick_hz = APPLE2_FREQUENCY,
@@ -278,7 +308,7 @@ void apple2_reset(apple2_t *sys) {
     if (sys->hdc.valid) {
         prodos_hdc_reset(&sys->hdc);
     }
-    wdc65C02cpu_reset();
+    MOS6502CPU_RESET(&sys->cpu);
 }
 
 static void _apple2_mem_c000_c0ff_rw(apple2_t *sys, uint16_t addr, bool rw) {
@@ -286,7 +316,7 @@ static void _apple2_mem_c000_c0ff_rw(apple2_t *sys, uint16_t addr, bool rw) {
         case 0x00:
             if (rw) {
                 if (sys->last_key_code != 0) {
-                    wdc65C02cpu_set_data(sys->last_key_code);
+                    MOS6502CPU_SET_DATA(&sys->cpu, sys->last_key_code);
                 }
             }
             break;
@@ -336,21 +366,21 @@ static void _apple2_mem_c000_c0ff_rw(apple2_t *sys, uint16_t addr, bool rw) {
                 // Apple II 16K Language Card
                 apple2_lc_control(&sys->lc, addr & 0xF, rw);
                 if (rw) {
-                    wdc65C02cpu_set_data(0xFF);
+                    MOS6502CPU_SET_DATA(&sys->cpu, 0xFF);
                 }
             } else if ((addr >= 0xC0E0) && (addr <= 0xC0EF)) {
                 // Disk II FDC
                 if (sys->fdc.valid) {
                     if (rw) {
                         // Memory read
-                        wdc65C02cpu_set_data(disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
+                        MOS6502CPU_SET_DATA(&sys->cpu, disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
                     } else {
                         // Memory write
-                        disk2_fdc_write_byte(&sys->fdc, addr & 0xF, wdc65C02cpu_get_data());
+                        disk2_fdc_write_byte(&sys->fdc, addr & 0xF, MOS6502CPU_GET_DATA(&sys->cpu));
                     }
                 } else {
                     if (rw) {
-                        wdc65C02cpu_set_data(0x00);
+                        MOS6502CPU_SET_DATA(&sys->cpu, 0x00);
                     }
                 }
             } else if ((addr >= 0xC0F0) && (addr <= 0xC0FF)) {
@@ -358,14 +388,14 @@ static void _apple2_mem_c000_c0ff_rw(apple2_t *sys, uint16_t addr, bool rw) {
                 if (sys->hdc.valid) {
                     if (rw) {
                         // Memory read
-                        wdc65C02cpu_set_data(prodos_hdc_read_byte(&sys->hdc, addr & 0xF));
+                        MOS6502CPU_SET_DATA(&sys->cpu, prodos_hdc_read_byte(&sys->hdc, addr & 0xF));
                     } else {
                         // Memory write
-                        prodos_hdc_write_byte(&sys->hdc, addr & 0xF, wdc65C02cpu_get_data(), &sys->mem);
+                        prodos_hdc_write_byte(&sys->hdc, addr & 0xF, MOS6502CPU_GET_DATA(&sys->cpu), &sys->mem);
                     }
                 } else {
                     if (rw) {
-                        wdc65C02cpu_set_data(0x00);
+                        MOS6502CPU_SET_DATA(&sys->cpu, 0x00);
                     }
                 }
             }
@@ -381,22 +411,22 @@ static void _apple2_mem_rw(apple2_t *sys, uint16_t addr, bool rw) {
         // Disk II boot rom
         if (rw) {
             // Memory read
-            wdc65C02cpu_set_data(sys->fdc.valid ? sys->fdc_rom[addr & 0xFF] : 0x00);
+            MOS6502CPU_SET_DATA(&sys->cpu, sys->fdc.valid ? sys->fdc_rom[addr & 0xFF] : 0x00);
         }
     } else if ((addr >= 0xC700) && (addr <= 0xC7FF)) {
         // Hard disk boot rom
         if (rw) {
             // Memory read
-            wdc65C02cpu_set_data(sys->hdc.valid ? sys->hdc_rom[addr & 0xFF] : 0x00);
+            MOS6502CPU_SET_DATA(&sys->cpu, sys->hdc.valid ? sys->hdc_rom[addr & 0xFF] : 0x00);
         }
     } else {
         // Regular memory access
         if (rw) {
             // Memory read
-            wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
+            MOS6502CPU_SET_DATA(&sys->cpu, mem_rd(&sys->mem, addr));
         } else {
             // Memory write
-            mem_wr(&sys->mem, addr, wdc65C02cpu_get_data());
+            mem_wr(&sys->mem, addr, MOS6502CPU_GET_DATA(&sys->cpu));
             if (addr >= 0x400 && addr <= 0x7FF) {
                 sys->text_page1_dirty = true;
             } else if (addr >= 0x800 && addr <= 0xBFF) {
@@ -411,12 +441,9 @@ static void _apple2_mem_rw(apple2_t *sys, uint16_t addr, bool rw) {
 }
 
 void apple2_tick(apple2_t *sys) {
-    uint16_t addr;
-    bool rw;
+    MOS6502CPU_TICK(&sys->cpu);
 
-    wdc65C02cpu_tick(&addr, &rw);
-
-    _apple2_mem_rw(sys, addr, rw);
+    _apple2_mem_rw(sys, sys->cpu.addr, sys->cpu.rw);
 
     // Update beeper
     if (beeper_tick(&sys->beeper)) {
@@ -551,30 +578,6 @@ bool apple2_load_snapshot(apple2_t *sys, uint32_t version, apple2_t *src) {
     mem_snapshot_onload(&im.mem, sys);
     *sys = im;
     return true;
-}
-
-static inline uint32_t _apple2_rotl4b(uint32_t n, uint32_t count) { return (n >> (-count & 3)) & 0xF; }
-
-static uint16_t _apple2_double_7_bits(uint8_t bits) {
-    uint16_t result = 0;
-    for (int i = 6; i >= 0; i--) {
-        result <<= 1;
-        uint8_t bit = bits & (1 << i) ? 1 : 0;
-        result |= bit;
-        result <<= 1;
-        result |= bit;
-    }
-    return result;
-}
-
-static uint8_t _apple2_reverse_7_bits(uint8_t bits) {
-    uint8_t result = 0;
-    for (int i = 0; i < 7; i++) {
-        result <<= 1;
-        result |= bits & 1;
-        bits >>= 1;
-    }
-    return result;
 }
 
 static void _apple2_render_line_monochrome(uint8_t *out, uint16_t *in, int start_col, int stop_col) {

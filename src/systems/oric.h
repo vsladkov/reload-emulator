@@ -1,62 +1,62 @@
 #pragma once
-/*#
-    # oric.h
 
-    An Oric emulator in a C header.
+// oric.h
+//
+// Oric emulator in a C header.
+//
+// Do this:
+// ~~~C
+// #define CHIPS_IMPL
+// ~~~
+// before you include this file in *one* C or C++ file to create the
+// implementation.
+//
+// Optionally provide the following macros with your own implementation
+//
+// ~~~C
+// CHIPS_ASSERT(c)
+// ~~~
+//     your own assert macro (default: assert(c))
+//
+// You need to include the following headers before including oric.h:
+//
+// - chips/chips_common.h
+// - chips/wdc65C02cpu.h | chips/mos6502cpu.h
+// - chips/mos6522via.h
+// - chips/ay38910psg.h
+// - chips/kbd.h
+// - chips/mem.h
+// - chips/clk.h
+// - systems/oric_fdd.h
+// - systems/oric_fdc.h
+// - systems/oric_fdc_rom.h
+// - systems/oric_td.h
+//
+// ## The Oric
+//
+//
+// TODO!
+//
+// ## Links
+//
+// ## zlib/libpng license
+//
+// Copyright (c) 2023 Veselin Sladkov
+// This software is provided 'as-is', without any express or implied warranty.
+// In no event will the authors be held liable for any damages arising from the
+// use of this software.
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//     1. The origin of this software must not be misrepresented; you must not
+//     claim that you wrote the original software. If you use this software in a
+//     product, an acknowledgment in the product documentation would be
+//     appreciated but is not required.
+//     2. Altered source versions must be plainly marked as such, and must not
+//     be misrepresented as being the original software.
+//     3. This notice may not be removed or altered from any source
+//     distribution.
 
-    Do this:
-    ~~~C
-    #define CHIPS_IMPL
-    ~~~
-    before you include this file in *one* C or C++ file to create the
-    implementation.
-
-    Optionally provide the following macros with your own implementation
-
-    ~~~C
-    CHIPS_ASSERT(c)
-    ~~~
-        your own assert macro (default: assert(c))
-
-    You need to include the following headers before including oric.h:
-
-    - chips/chips_common.h
-    - chips/wdc65C02cpu.h
-    - chips/mos6522via.h
-    - chips/ay38910psg.h
-    - chips/kbd.h
-    - chips/mem.h
-    - chips/clk.h
-    - systems/oric_fdd.h
-    - systems/oric_fdc.h
-    - systems/oric_fdc_rom.h
-    - systems/oric_td.h
-
-    ## The Oric
-
-
-    TODO!
-
-    ## Links
-
-    ## zlib/libpng license
-
-    Copyright (c) 2023 Veselin Sladkov
-    This software is provided 'as-is', without any express or implied warranty.
-    In no event will the authors be held liable for any damages arising from the
-    use of this software.
-    Permission is granted to anyone to use this software for any purpose,
-    including commercial applications, and to alter it and redistribute it
-    freely, subject to the following restrictions:
-        1. The origin of this software must not be misrepresented; you must not
-        claim that you wrote the original software. If you use this software in a
-        product, an acknowledgment in the product documentation would be
-        appreciated but is not required.
-        2. Altered source versions must be plainly marked as such, and must not
-        be misrepresented as being the original software.
-        3. This notice may not be removed or altered from any source
-        distribution.
-#*/
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -70,8 +70,8 @@ extern "C" {
 // Bump snapshot version when oric_t memory layout changes
 #define ORIC_SNAPSHOT_VERSION (1)
 
-#define ORIC_FREQUENCY             (1000000)  // 1 MHz
-#define ORIC_MAX_TAPE_SIZE         (1 << 16)  // Max size of tape file in bytes
+#define ORIC_FREQUENCY     (1000000)  // 1 MHz
+#define ORIC_MAX_TAPE_SIZE (1 << 16)  // Max size of tape file in bytes
 
 #define ORIC_SCREEN_WIDTH     240  // (240)
 #define ORIC_SCREEN_HEIGHT    224  // (224)
@@ -91,7 +91,7 @@ typedef struct {
 
 // Oric emulator state
 typedef struct {
-    // m6502_t cpu;
+    MOS6502CPU_T cpu;
     mos6522via_t via;
     ay38910psg_t psg;
     kbd_t kbd;
@@ -125,24 +125,24 @@ typedef struct {
 
 // Oric interface
 
-// initialize a new Oric instance
+// Initialize a new Oric instance
 void oric_init(oric_t* sys, const oric_desc_t* desc);
-// discard Oric instance
+// Discard Oric instance
 void oric_discard(oric_t* sys);
-// reset a Oric instance
+// Reset a Oric instance
 void oric_reset(oric_t* sys);
 
 void oric_tick(oric_t* sys);
 
-// tick Oric instance for a given number of microseconds, return number of executed ticks
+// Tick Oric instance for a given number of microseconds, return number of executed ticks
 uint32_t oric_exec(oric_t* sys, uint32_t micro_seconds);
-// send a key-down event to the Oric Atmos
+// Send a key-down event to the Oric Atmos
 void oric_key_down(oric_t* sys, int key_code);
-// send a key-up event to the Oric Atmos
+// Send a key-up event to the Oric Atmos
 void oric_key_up(oric_t* sys, int key_code);
-// take a snapshot, patches pointers to zero or offsets, returns snapshot version
+// Take a snapshot, patches pointers to zero or offsets, returns snapshot version
 uint32_t oric_save_snapshot(oric_t* sys, oric_t* dst);
-// load a snapshot, returns false if snapshot version doesn't match
+// Load a snapshot, returns false if snapshot version doesn't match
 bool oric_load_snapshot(oric_t* sys, uint32_t version, oric_t* src);
 
 void oric_screen_update(oric_t* sys);
@@ -186,9 +186,7 @@ void oric_init(oric_t* sys, const oric_desc_t* desc) {
     sys->rom = desc->roms.rom.ptr;
     sys->boot_rom = desc->roms.boot_rom.ptr;
 
-    // sys->pins = m6502_init(&sys->cpu, &(m6502_desc_t){0});
-
-    wdc65C02cpu_init();
+    MOS6502CPU_INIT(&sys->cpu, &(MOS6502CPU_DESC_T){0});
 
     mos6522via_init(&sys->via);
     ay38910psg_init(&sys->psg, &(ay38910psg_desc_t){.type = AY38910PSG_TYPE_8912,
@@ -233,7 +231,7 @@ void oric_discard(oric_t* sys) {
 
 void oric_nmi(oric_t* sys) {
     CHIPS_ASSERT(sys && sys->valid);
-    wdc65C02cpu_nmi();
+    MOS6502CPU_NMI(&sys->cpu);
 }
 
 void oric_reset(oric_t* sys) {
@@ -246,7 +244,7 @@ void oric_reset(oric_t* sys) {
     if (sys->td.valid) {
         oric_td_reset(&sys->td);
     }
-    wdc65C02cpu_reset();
+    MOS6502CPU_RESET(&sys->cpu);
 }
 
 static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
@@ -254,23 +252,23 @@ static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
         // Memory-mapped IO area
         if ((addr >= 0x0300) && (addr <= 0x030F)) {
             if (rw) {
-                wdc65C02cpu_set_data(mos6522via_read(&sys->via, addr & 0xF));
+                MOS6502CPU_SET_DATA(&sys->cpu, mos6522via_read(&sys->via, addr & 0xF));
             } else {
-                mos6522via_write(&sys->via, addr & 0xF, wdc65C02cpu_get_data());
+                mos6522via_write(&sys->via, addr & 0xF, MOS6502CPU_GET_DATA(&sys->cpu));
             }
         } else if ((addr >= 0x0310) && (addr <= 0x031F)) {
             if (sys->fdc.valid) {
                 // Disk II FDC
                 if (rw) {
                     // Memory read
-                    wdc65C02cpu_set_data(disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
+                    MOS6502CPU_SET_DATA(&sys->cpu, disk2_fdc_read_byte(&sys->fdc, addr & 0xF));
                 } else {
                     // Memory write
-                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, wdc65C02cpu_get_data());
+                    disk2_fdc_write_byte(&sys->fdc, addr & 0xF, MOS6502CPU_GET_DATA(&sys->cpu));
                 }
             } else {
                 if (rw) {
-                    wdc65C02cpu_set_data(0x00);
+                    MOS6502CPU_SET_DATA(&sys->cpu, 0x00);
                 }
             }
         } else if ((addr >= 0x0320) && (addr <= 0x03FF)) {
@@ -278,7 +276,7 @@ static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
                 // Disk II boot rom
                 if (rw) {
                     // Memory read
-                    wdc65C02cpu_set_data(sys->boot_rom[(addr & 0xFF) + sys->extension]);
+                    MOS6502CPU_SET_DATA(&sys->cpu, sys->boot_rom[(addr & 0xFF) + sys->extension]);
                 } else {
                     // Memory write
                     switch (addr) {
@@ -308,7 +306,7 @@ static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
                 }
             } else {
                 if (rw) {
-                    wdc65C02cpu_set_data(0x00);
+                    MOS6502CPU_SET_DATA(&sys->cpu, 0x00);
                 }
             }
         }
@@ -316,10 +314,10 @@ static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
         // Regular memory access
         if (rw) {
             // Memory read
-            wdc65C02cpu_set_data(mem_rd(&sys->mem, addr));
+            MOS6502CPU_SET_DATA(&sys->cpu, mem_rd(&sys->mem, addr));
         } else {
             // Memory write
-            mem_wr(&sys->mem, addr, wdc65C02cpu_get_data());
+            mem_wr(&sys->mem, addr, MOS6502CPU_GET_DATA(&sys->cpu));
 
             if (addr >= 0x9800 && addr <= 0xBFDF) {
                 sys->screen_dirty = true;
@@ -331,12 +329,9 @@ static void _oric_mem_rw(oric_t* sys, uint16_t addr, bool rw) {
 static uint8_t _last_motor_state = 0;
 
 void oric_tick(oric_t* sys) {
-    uint16_t addr;
-    bool rw;
+    MOS6502CPU_TICK(&sys->cpu);
 
-    wdc65C02cpu_tick(&addr, &rw);
-
-    _oric_mem_rw(sys, addr, rw);
+    _oric_mem_rw(sys, sys->cpu.addr, sys->cpu.rw);
 
     // Tick PSG
     if ((sys->system_ticks & 63) == 0) {
@@ -365,7 +360,7 @@ void oric_tick(oric_t* sys) {
 
     // Tick VIA
     if ((sys->system_ticks & 3) == 0) {
-        wdc65C02cpu_set_irq(mos6522via_tick(&sys->via, 4));
+        MOS6502CPU_SET_IRQ(&sys->cpu, mos6522via_tick(&sys->via, 4));
 
         // Update PSG state
         if (mos6522via_get_cb2(&sys->via)) {
