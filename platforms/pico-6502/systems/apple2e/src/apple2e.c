@@ -13,8 +13,11 @@
 #include <pico/platform.h>
 #include "pico/stdlib.h"
 
-// #include "roms/apple2e_roms.h"
+#ifdef OLIMEX_NEO6502
 #include "roms/apple2ee_roms.h"
+#else
+#include "roms/apple2e_roms.h"
+#endif
 #include "images/apple2_images.h"
 // #include "images/apple2_nib_images.h"
 
