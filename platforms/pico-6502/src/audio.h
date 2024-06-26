@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#ifdef defined(OLIMEX_NEO6502) || defined(OLIMEX_RP2040PC)
+#if defined(OLIMEX_NEO6502) || defined(OLIMEX_RP2040PC)
 #define _AUDIO_PIN (20)
 #else
 #define _AUDIO_PIN (8)
