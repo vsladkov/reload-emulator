@@ -1,8 +1,8 @@
 #pragma once
 
-// beeper.h    -- simple square-wave beeper
+// beeper.h
 //
-// TODO: docs
+// Simple square-wave beeper
 //
 // ## zlib/libpng license
 //

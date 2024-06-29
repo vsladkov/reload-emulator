@@ -1,40 +1,12 @@
 #pragma once
 
-// ay38910psg.h   -- AY-3-8910/2/3 sound chip emulator
+// ay38910psg.h
 //
-// Do this:
-//     #define CHIPS_IMPL
-// before you include this file in *one* C or C++ file to create the
-// implementation.
-//
-// Optionally provde the following macros with your own implementation
-//
-// CHIPS_ASSERT(c)     -- your own assert macro (default: assert(c))
-//
-// EMULATED PINS:
-//
-//          +-----------+
-//   BC1 -->|           |<-> DA0
-//  BDIR -->|           |...
-//          |           |<-> DA7
-//          |           |
-//          |           |<-> (IOA0)
-//          |           |...
-//          |           |<-> (IOA7)
-//          |           |
-//          |           |<-> (IOB0)
-//          |           |...
-//          |           |<-> (IOB7)
-//          +-----------+
-//
-// NOT EMULATED:
-//
-// - the BC2 pin is ignored since it makes only sense when connected to
-//   a CP1610 CPU
-// - the RESET pin state is ignored, instead call ay38910psg_reset()
+// AY-3-8910/2/3 sound chip emulator
 //
 // ## zlib/libpng license
 //
+// Copyright (c) 2023 Veselin Sladkov
 // Copyright (c) 2018 Andre Weissflog
 // This software is provided 'as-is', without any express or implied warranty.
 // In no event will the authors be held liable for any damages arising from the
