@@ -167,9 +167,168 @@ struct dvi_inst dvi0;
 
 void tmds_palette_init() { tmds_setup_palette24_symbols(apple2_palette, tmds_palette, PALETTE_SIZE); }
 
-void kbd_raw_key_down(int code) { apple2_key_down(&state.apple2, isascii(code) ? toupper(code) : code); }
+void kbd_raw_key_down(int code) {
+    if (isascii(code)) {
+        code = toupper(code);
+    }
 
-void kbd_raw_key_up(int code) { apple2_key_up(&state.apple2, isascii(code) ? toupper(code) : code); }
+    if (code == 0x14F) {
+        // Arrow right
+        code = 0x15;
+    } else if (code == 0x150) {
+        // Arrow left
+        code = 0x08;
+    }
+
+    apple2_t *sys = &state.apple2;
+
+    switch (code) {
+        case 0x13A:  // F1
+        case 0x13B:  // F2
+        case 0x13C:  // F3
+        case 0x13D:  // F4
+        case 0x13E:  // F5
+        case 0x13F:  // F6
+        case 0x140:  // F7
+        case 0x141:  // F8
+        case 0x142:  // F9
+        {
+            if (sys->fdc.valid) {
+                uint8_t index = code - 0x13A;
+                if (CHIPS_ARRAY_SIZE(apple2_nib_images) > index) {
+                    disk2_fdd_insert_disk(&sys->fdc.fdd[0], apple2_nib_images[index]);
+                }
+            }
+            break;
+        }
+
+        case 0x145:  // F12
+            apple2_reset(sys);
+            break;
+
+        default:
+            if (code < 128) {
+                sys->kbd_last_key = code | 0x80;
+            }
+            break;
+    }
+    // printf("Key down: %d\n", code);
+}
+
+void kbd_raw_key_up(int code) {
+    if (isascii(code)) {
+        code = toupper(code);
+    }
+    // printf("Key up: %d\n", code);
+}
+
+void gamepad_state_update(uint8_t index, uint8_t hat_state, uint32_t button_state) {
+    apple2_t *sys = &state.apple2;
+
+    sys->paddl0 = 0x80;
+    sys->paddl1 = 0x80;
+    sys->paddl2 = 0x80;
+    sys->paddl3 = 0x80;
+
+    switch (hat_state) {
+
+        case GAMEPAD_HAT_CENTERED:
+            break;
+
+        case GAMEPAD_HAT_UP:
+            if (index == 0) {
+                sys->paddl1 = 0x00;
+            } else {
+                sys->paddl3 = 0x00;
+            }
+            break;
+
+        case GAMEPAD_HAT_UP_RIGHT:
+            if (index == 0) {
+                sys->paddl0 = 0xFF;
+                sys->paddl1 = 0x00;
+            } else {
+                sys->paddl2 = 0xFF;
+                sys->paddl3 = 0x00;
+            }
+            break;
+
+        case GAMEPAD_HAT_RIGHT:
+            if (index == 0) {
+                sys->paddl0 = 0xFF;
+            } else {
+                sys->paddl2 = 0xFF;
+            }
+            break;
+
+        case GAMEPAD_HAT_DOWN_RIGHT:
+            if (index == 0) {
+                sys->paddl0 = 0xFF;
+                sys->paddl1 = 0xFF;
+            } else {
+                sys->paddl2 = 0xFF;
+                sys->paddl3 = 0xFF;
+            }
+            break;
+
+        case GAMEPAD_HAT_DOWN:
+            if (index == 0) {
+                sys->paddl1 = 0xFF;
+            } else {
+                sys->paddl3 = 0xFF;
+            }
+            break;
+
+        case GAMEPAD_HAT_DOWN_LEFT:
+            if (index == 0) {
+                sys->paddl0 = 0x00;
+                sys->paddl1 = 0xFF;
+            } else {
+                sys->paddl2 = 0x00;
+                sys->paddl3 = 0xFF;
+            }
+            break;
+
+        case GAMEPAD_HAT_LEFT:
+            if (index == 0) {
+                sys->paddl0 = 0x00;
+            } else {
+                sys->paddl2 = 0x00;
+            }
+            break;
+
+        case GAMEPAD_HAT_UP_LEFT:
+            if (index == 0) {
+                sys->paddl0 = 0x00;
+                sys->paddl1 = 0x00;
+            } else {
+                sys->paddl2 = 0x00;
+                sys->paddl3 = 0x00;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    sys->butn0 = false;
+    sys->butn1 = false;
+    sys->butn2 = false;
+
+    if (button_state & GAMEPAD_BUTTON_A) {
+        if (index == 0) {
+            sys->butn0 = true;
+        } else {
+            sys->butn2 = true;
+        }
+    }
+    if (button_state & GAMEPAD_BUTTON_B) {
+        if (index == 0) {
+            sys->butn1 = true;
+        }
+    }
+    // printf("Gamepad state update: %d %d %d\n", index, hat_state, button_state);
+}
 
 extern void apple2_render_scanline(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 extern void copy_tmdsbuf(uint32_t *dest, const uint32_t *src);

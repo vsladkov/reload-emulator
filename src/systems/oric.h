@@ -136,10 +136,6 @@ void oric_tick(oric_t* sys);
 
 // Tick Oric instance for a given number of microseconds, return number of executed ticks
 uint32_t oric_exec(oric_t* sys, uint32_t micro_seconds);
-// Send a key-down event to the Oric Atmos
-void oric_key_down(oric_t* sys, int key_code);
-// Send a key-up event to the Oric Atmos
-void oric_key_up(oric_t* sys, int key_code);
 // Take a snapshot, patches pointers to zero or offsets, returns snapshot version
 uint32_t oric_save_snapshot(oric_t* sys, oric_t* dst);
 // Load a snapshot, returns false if snapshot version doesn't match
@@ -614,50 +610,6 @@ static void _oric_init_key_map(oric_t* sys) {
     kbd_register_key(&sys->kbd, 0x13, 6, 6, 2);  // Ctrl+S
     kbd_register_key(&sys->kbd, 0x0C, 1, 7, 2);  // Ctrl+L
     kbd_register_key(&sys->kbd, 0x0E, 1, 0, 2);  // Ctrl+N
-}
-
-void oric_key_down(oric_t* sys, int key_code) {
-    CHIPS_ASSERT(sys && sys->valid);
-    switch (key_code) {
-        case 0x13A:  // F1
-        case 0x13B:  // F2
-        case 0x13C:  // F3
-        case 0x13D:  // F4
-        case 0x13E:  // F5
-        case 0x13F:  // F6
-        case 0x140:  // F7
-        case 0x141:  // F8
-        case 0x142:  // F9
-        {
-            uint8_t index = key_code - 0x13A;
-            int num_nib_images = CHIPS_ARRAY_SIZE(oric_nib_images);
-            if (index < num_nib_images) {
-                if (sys->fdc.valid) {
-                    disk2_fdd_insert_disk(&sys->fdc.fdd[0], oric_nib_images[index]);
-                }
-            } else {
-                index -= num_nib_images;
-                if (index < CHIPS_ARRAY_SIZE(oric_wave_images)) {
-                    if (sys->td.valid) {
-                        oric_td_insert_tape(&sys->td, oric_wave_images[index]);
-                    }
-                }
-            }
-            break;
-        }
-
-        case 0x144:  // F11
-            oric_nmi(sys);
-            break;
-
-        case 0x145:  // F12
-            oric_reset(sys);
-            break;
-
-        default:
-            kbd_key_down(&sys->kbd, key_code);
-            break;
-    }
 }
 
 void oric_key_up(oric_t* sys, int key_code) {

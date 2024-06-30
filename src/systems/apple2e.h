@@ -147,10 +147,23 @@ typedef struct {
 
     prodos_hdc_t hdc;  // ProDOS hard disk controller
 
-    uint8_t last_key_code;
+    uint8_t kbd_last_key;
+    bool kbd_open_apple_pressed;
+    bool kbd_solid_apple_pressed;
 
-    bool open_apple_pressed;
-    bool solid_apple_pressed;
+    uint8_t paddl0;
+    uint8_t paddl1;
+    uint8_t paddl2;
+    uint8_t paddl3;
+
+    uint16_t paddl0_ticks_left;
+    uint16_t paddl1_ticks_left;
+    uint16_t paddl2_ticks_left;
+    uint16_t paddl3_ticks_left;
+
+    bool butn0;
+    bool butn1;
+    bool butn2;
 
     uint32_t system_ticks;
     uint16_t vbl_ticks;
@@ -169,13 +182,9 @@ void apple2e_tick(apple2e_t *sys);
 
 // Tick Apple2e instance for a given number of microseconds, return number of executed ticks
 uint32_t apple2e_exec(apple2e_t *sys, uint32_t micro_seconds);
-// Send a key-down event to the Apple2e
-void apple2e_key_down(apple2e_t *sys, int key_code);
-// Send a key-up event to the Apple2e
-void apple2e_key_up(apple2e_t *sys, int key_code);
-// Take a snapshot, patches pointers to zero or offsets, returns snapshot version
+// Take snapshot, patches pointers to zero or offsets, returns snapshot version
 uint32_t apple2e_save_snapshot(apple2e_t *sys, apple2e_t *dst);
-// Load a snapshot, returns false if snapshot version doesn't match
+// Load snapshot, returns false if snapshot version doesn't match
 bool apple2e_load_snapshot(apple2e_t *sys, uint32_t version, apple2e_t *src);
 
 void apple2e_screen_update(apple2e_t *sys);
@@ -269,7 +278,12 @@ void apple2e_init(apple2e_t *sys, const apple2e_desc_t *desc) {
 
     sys->ioudis = true;
 
-    sys->last_key_code = 0x0D | 0x80;
+    sys->kbd_last_key = 0x0D | 0x80;
+
+    sys->paddl0 = 0x80;
+    sys->paddl1 = 0x80;
+    sys->paddl2 = 0x80;
+    sys->paddl3 = 0x80;
 
     // Optionally setup floppy disk controller
     if (desc->fdc_enabled) {
@@ -600,7 +614,7 @@ static void _apple2e_mem_c010_c01f_r(apple2e_t *sys, uint16_t addr) {
 static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
     switch (addr & 0xFF) {
         case 0x10:
-            sys->last_key_code &= 0x7F;
+            sys->kbd_last_key &= 0x7F;
             break;
 
         case 0x50:  // TEXTOFF
@@ -673,17 +687,52 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
             }
             break;
 
-        case 0x61:  // Open Apple
+        case 0x61:  // Button 0 or Open Apple
         case 0x69:
             if (rw) {
-                MOS6502CPU_SET_DATA(&sys->cpu, sys->open_apple_pressed ? 0x80 : 00);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->butn0 || sys->kbd_open_apple_pressed ? 0x80 : 00);
             }
             break;
 
-        case 0x62:  // Solid Apple
+        case 0x62:  // Botton 1 or Solid Apple
         case 0x6A:
             if (rw) {
-                MOS6502CPU_SET_DATA(&sys->cpu, sys->solid_apple_pressed ? 0x80 : 00);
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->butn1 || sys->kbd_solid_apple_pressed ? 0x80 : 00);
+            }
+            break;
+
+        case 0x63:  // Botton 2
+        case 0x6B:
+            if (rw) {
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->butn2 ? 0x80 : 00);
+            }
+            break;
+
+        case 0x64:  // Joystick 1 X axis
+        case 0x6C:
+            if (rw) {
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->paddl0_ticks_left > 0 ? 0x80 : 00);
+            }
+            break;
+
+        case 0x65:  // Joystick 1 Y axis
+        case 0x6D:
+            if (rw) {
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->paddl1_ticks_left > 0 ? 0x80 : 00);
+            }
+            break;
+
+        case 0x66:  // Joystick 2 X axis
+        case 0x6E:
+            if (rw) {
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->paddl2_ticks_left > 0 ? 0x80 : 00);
+            }
+            break;
+
+        case 0x67:  // Joystick 2 Y axis
+        case 0x6F:
+            if (rw) {
+                MOS6502CPU_SET_DATA(&sys->cpu, sys->paddl3_ticks_left > 0 ? 0x80 : 00);
             }
             break;
 
@@ -711,7 +760,7 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
             if ((addr >= 0xC000) && (addr <= 0xC00F)) {
                 // Keyboard latch
                 if (rw) {
-                    MOS6502CPU_SET_DATA(&sys->cpu, sys->last_key_code);
+                    MOS6502CPU_SET_DATA(&sys->cpu, sys->kbd_last_key);
                 } else {
                     _apple2e_mem_c000_c00f_w(sys, addr);
                 }
@@ -722,6 +771,20 @@ static void _apple2e_mem_c000_c0ff_rw(apple2e_t *sys, uint16_t addr, bool rw) {
             } else if ((addr >= 0xC030) && (addr <= 0xC03F)) {
                 // Speaker
                 beeper_toggle(&sys->beeper);
+            } else if ((addr >= 0xC070) && (addr <= 0xC07F)) {
+                // Joystick
+                if (sys->paddl0_ticks_left == 0) {
+                    sys->paddl0_ticks_left = sys->paddl0 * 11;
+                }
+                if (sys->paddl1_ticks_left == 0) {
+                    sys->paddl1_ticks_left = sys->paddl1 * 11;
+                }
+                if (sys->paddl2_ticks_left == 0) {
+                    sys->paddl2_ticks_left = sys->paddl2 * 11;
+                }
+                if (sys->paddl3_ticks_left == 0) {
+                    sys->paddl3_ticks_left = sys->paddl3 * 11;
+                }
             } else if ((addr >= 0xC080) && (addr <= 0xC08F)) {
                 // 16K Language Card
                 _apple2e_lc_control(sys, addr & 0xF, rw);
@@ -810,6 +873,19 @@ void apple2e_tick(apple2e_t *sys) {
     } else {
         sys->vbl_ticks = 0;
         sys->vbl = false;
+    }
+
+    if (sys->paddl0_ticks_left > 0) {
+        sys->paddl0_ticks_left--;
+    }
+    if (sys->paddl1_ticks_left > 0) {
+        sys->paddl1_ticks_left--;
+    }
+    if (sys->paddl2_ticks_left > 0) {
+        sys->paddl2_ticks_left--;
+    }
+    if (sys->paddl3_ticks_left > 0) {
+        sys->paddl3_ticks_left--;
     }
 
     MOS6502CPU_TICK(&sys->cpu);
@@ -938,80 +1014,6 @@ static void _apple2e_init_memorymap(apple2e_t *sys) {
     sys->lcram = false;
     sys->prewrite = false;
     sys->write_enabled = true;
-}
-
-void apple2e_key_down(apple2e_t *sys, int key_code) {
-    CHIPS_ASSERT(sys && sys->valid);
-    if (key_code == 0x14F) {
-        // Arrow right
-        key_code = 0x15;
-    } else if (key_code == 0x150) {
-        // Arrow left
-        key_code = 0x08;
-    } else if (key_code == 0x151) {
-        // Arrow down
-        key_code = 0x0A;
-    } else if (key_code == 0x152) {
-        // Arrow up
-        key_code = 0x0B;
-    }
-
-    switch (key_code) {
-        case 0x13A:  // F1
-        case 0x13B:  // F2
-        case 0x13C:  // F3
-        case 0x13D:  // F4
-        case 0x13E:  // F5
-        case 0x13F:  // F6
-        case 0x140:  // F7
-        case 0x141:  // F8
-        case 0x142:  // F9
-        {
-            if (sys->fdc.valid) {
-                uint8_t index = key_code - 0x13A;
-                if (CHIPS_ARRAY_SIZE(apple2_nib_images) > index) {
-                    disk2_fdd_insert_disk(&sys->fdc.fdd[0], apple2_nib_images[index]);
-                }
-            }
-            break;
-        }
-
-        case 0x145:  // F12
-            apple2e_reset(sys);
-            break;
-
-        case 0x1E3:  // GUI LEFT
-            sys->open_apple_pressed = true;
-            break;
-
-        case 0x1E7:  // GUI RIGHT
-            sys->solid_apple_pressed = true;
-            break;
-
-        default:
-            if (key_code < 128) {
-                sys->last_key_code = key_code | 0x80;
-            }
-            break;
-    }
-    // printf("key down: %d\n", key_code);
-}
-
-void apple2e_key_up(apple2e_t *sys, int key_code) {
-    CHIPS_ASSERT(sys && sys->valid);
-    switch (key_code) {
-        case 0x1E3:  // GUI LEFT
-            sys->open_apple_pressed = false;
-            break;
-
-        case 0x1E7:  // GUI RIGHT
-            sys->solid_apple_pressed = false;
-            break;
-
-        default:
-            break;
-    }
-    // printf("key up: %d\n", key_code);
 }
 
 uint32_t apple2e_save_snapshot(apple2e_t *sys, apple2e_t *dst) {

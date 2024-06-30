@@ -158,7 +158,49 @@ void kbd_raw_key_down(int code) {
             code = toupper(code);
         }
     }
-    oric_key_down(&state.oric, code);
+
+    oric_t *sys = &state.oric;
+
+    switch (code) {
+        case 0x13A:  // F1
+        case 0x13B:  // F2
+        case 0x13C:  // F3
+        case 0x13D:  // F4
+        case 0x13E:  // F5
+        case 0x13F:  // F6
+        case 0x140:  // F7
+        case 0x141:  // F8
+        case 0x142:  // F9
+        {
+            uint8_t index = code - 0x13A;
+            int num_nib_images = CHIPS_ARRAY_SIZE(oric_nib_images);
+            if (index < num_nib_images) {
+                if (sys->fdc.valid) {
+                    disk2_fdd_insert_disk(&sys->fdc.fdd[0], oric_nib_images[index]);
+                }
+            } else {
+                index -= num_nib_images;
+                if (index < CHIPS_ARRAY_SIZE(oric_wave_images)) {
+                    if (sys->td.valid) {
+                        oric_td_insert_tape(&sys->td, oric_wave_images[index]);
+                    }
+                }
+            }
+            break;
+        }
+
+        case 0x144:  // F11
+            oric_nmi(sys);
+            break;
+
+        case 0x145:  // F12
+            oric_reset(sys);
+            break;
+
+        default:
+            kbd_key_down(&sys->kbd, code);
+            break;
+    }
 }
 
 void kbd_raw_key_up(int code) {
@@ -169,8 +211,10 @@ void kbd_raw_key_up(int code) {
             code = toupper(code);
         }
     }
-    oric_key_up(&state.oric, code);
+    kbd_key_up(&state.oric.kbd, code);
 }
+
+void gamepad_state_update(uint8_t index, uint8_t hat_state, uint32_t button_state) {}
 
 // extern void oric_render_scanline_2x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
 extern void oric_render_scanline_3x(const uint32_t *pixbuf, uint32_t *scanbuf, size_t n_pix);
