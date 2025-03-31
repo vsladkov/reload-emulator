@@ -19,7 +19,7 @@ Emulated systems:
   - 16 KB Overlay RAM installed
   - Disk II controller installed and 1 drive
 
-## Requirements (rp2040)
+## Requirements (RP2040)
 ### Tools
 - cmake
 - arm-none-eabi-gcc
@@ -29,7 +29,7 @@ Emulated systems:
 - PicoDVI
 - tinyusb
 
-## Quickstart (rp2040)
+## Quickstart (RP2040)
 
 ```bash
 # Checkout pico-sdk & PicoDVI & tinyusb as git submodules
