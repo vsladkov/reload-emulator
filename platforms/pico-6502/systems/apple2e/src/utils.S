@@ -68,7 +68,7 @@ decl_func copy_tmdsbuf
 	push {r2-r7, lr}
 
 #ifdef OLIMEX_NEO6502
-.rept 160
+.rept 200
 #else
 .rept 200
 #endif

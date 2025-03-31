@@ -125,22 +125,6 @@ void app_init(void) {
 #define DVI_TIMING   dvi_timing_960x544p_60hz
 #endif  // OLIMEX_NEO6502
 
-#define PALETTE_BITS 3
-#define PALETTE_SIZE (1 << PALETTE_BITS)
-
-#define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
-
-static const uint32_t oric_palette[PALETTE_SIZE] = {
-    RGBA8(0x00, 0x00, 0x00), /* black */
-    RGBA8(0xFF, 0x00, 0x00), /* red */
-    RGBA8(0x00, 0xFF, 0x00), /* green */
-    RGBA8(0xFF, 0xFF, 0x00), /* yellow */
-    RGBA8(0x00, 0x00, 0xFF), /* blue */
-    RGBA8(0xFF, 0x00, 0xFF), /* magenta */
-    RGBA8(0x00, 0xFF, 0xFF), /* cyan */
-    RGBA8(0xFF, 0xFF, 0xFF), /* white */
-};
-
 uint32_t __not_in_flash() tmds_palette[PALETTE_SIZE * 6];
 uint32_t __not_in_flash() empty_tmdsbuf[3 * FRAME_WIDTH / DVI_SYMBOLS_PER_WORD];
 

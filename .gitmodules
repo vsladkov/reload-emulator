@@ -1,3 +1,6 @@
+[submodule "platforms/pc/lib/sokol"]
+	path = platforms/pc/lib/sokol
+	url = https://github.com/vsladkov/sokol.git
 [submodule "platforms/pico-6502/lib/pico-sdk"]
 	path = platforms/pico-6502/lib/pico-sdk
 	url = https://github.com/vsladkov/pico-sdk.git

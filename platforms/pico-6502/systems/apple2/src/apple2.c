@@ -48,7 +48,7 @@
 #include "devices/disk2_fdd.h"
 #include "devices/disk2_fdc.h"
 #include "devices/apple2_fdc_rom.h"
-#include "devices/prodos_hdd.h"
+#include "devices/prodos_hdd_msc.h"
 #include "devices/prodos_hdc.h"
 #include "devices/prodos_hdc_rom.h"
 #include "systems/apple2.h"
@@ -132,32 +132,6 @@ void app_init(void) {
 #define DVI_TIMING   dvi_timing_800x600p_60hz
 #endif  // OLIMEX_NEO6502
 
-#define PALETTE_BITS 4
-#define PALETTE_SIZE (1 << PALETTE_BITS)
-
-#define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
-
-// clang-format off
-static const uint32_t apple2_palette[PALETTE_SIZE] = {
-    RGBA8(0x00, 0x00, 0x00), /* Black */
-    RGBA8(0xA7, 0x0B, 0x4C), /* Dark Red */
-    RGBA8(0x40, 0x1C, 0xF7), /* Dark Blue */
-    RGBA8(0xE6, 0x28, 0xFF), /* Purple */
-    RGBA8(0x00, 0x74, 0x40), /* Dark Green */
-    RGBA8(0x80, 0x80, 0x80), /* Dark Gray */
-    RGBA8(0x19, 0x90, 0xFF), /* Medium Blue */
-    RGBA8(0xBF, 0x9C, 0xFF), /* Light Blue */
-    RGBA8(0x40, 0x63, 0x00), /* Brown */
-    RGBA8(0xE6, 0x6F, 0x00), /* Orange */
-    RGBA8(0x80, 0x80, 0x80), /* Light Grey */
-    RGBA8(0xFF, 0x8B, 0xBF), /* Pink */
-    RGBA8(0x19, 0xD7, 0x00), /* Light Green */
-    RGBA8(0xBF, 0xE3, 0x08), /* Yellow */
-    RGBA8(0x58, 0xF4, 0xBF), /* Aquamarine */
-    RGBA8(0xFF, 0xFF, 0xFF)  /* White */
-};
-// clang-format on
-
 uint32_t __not_in_flash() tmds_palette[PALETTE_SIZE * 6];
 uint32_t __not_in_flash() empty_tmdsbuf[3 * FRAME_WIDTH / DVI_SYMBOLS_PER_WORD];
 
@@ -231,7 +205,6 @@ void gamepad_state_update(uint8_t index, uint8_t hat_state, uint32_t button_stat
     sys->paddl3 = 0x80;
 
     switch (hat_state) {
-
         case GAMEPAD_HAT_CENTERED:
             break;
 
@@ -401,6 +374,15 @@ void __not_in_flash_func(core1_main()) {
     __builtin_unreachable();
 }
 
+extern bool msc_inquiry_complete;
+
+void wait_for_msc_ready(void) {
+    while (!msc_inquiry_complete) {
+        sleep_us(16666);
+        tuh_task();
+    }
+}
+
 int main() {
     vreg_set_voltage(VREG_VSEL);
     sleep_ms(10);
@@ -421,6 +403,8 @@ int main() {
     printf("Core 1 start\n");
     hw_set_bits(&bus_ctrl_hw->priority, BUSCTRL_BUS_PRIORITY_PROC1_BITS);
     multicore_launch_core1(core1_main);
+
+    wait_for_msc_ready();
 
     app_init();
 

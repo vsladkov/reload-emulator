@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +23,7 @@ extern "C" {
 // ProDOS hard disk drive state
 typedef struct {
     bool valid;
-    FILE* file;
+    FIL fil;
     uint8_t* po_image;
     uint8_t image_type;
     uint32_t image_blocks;
@@ -94,15 +92,13 @@ void prodos_hdd_reset(prodos_hdd_t* sys) { CHIPS_ASSERT(sys && sys->valid); }
 
 bool prodos_hdd_insert_disk_msc(prodos_hdd_t* sys, const char* file_name) {
     CHIPS_ASSERT(sys && sys->valid);
-    sys->file = fopen(file_name, "r+b");
-    if (!sys->file) {
-        printf("Error opening file %s\r\n", file_name);
+    FRESULT res = f_open(&sys->fil, file_name, FA_READ | FA_WRITE);
+    if (res != FR_OK) {
+        printf("Error %u opening file %s\r\n", res, file_name);
         return false;
     }
     sys->image_type = PRODOS_HDD_IMAGE_TYPE_MSC;
-    fseek(sys->file, 0, SEEK_END);
-    sys->image_blocks = ftell(sys->file) / PRODOS_HDD_BYTES_PER_BLOCK;
-    fseek(sys->file, 0, SEEK_SET);
+    sys->image_blocks = f_size(&sys->fil) / PRODOS_HDD_BYTES_PER_BLOCK;
     sys->image_loaded = true;
     sys->write_protected = false;
 
@@ -123,7 +119,7 @@ bool prodos_hdd_insert_disk_internal(prodos_hdd_t* sys, uint8_t* po_image, uint3
 void prodos_hdd_remove_disk(prodos_hdd_t* sys) {
     CHIPS_ASSERT(sys && sys->valid);
     if (sys->image_type == PRODOS_HDD_IMAGE_TYPE_MSC) {
-        fclose(sys->file);
+        f_close(&sys->fil);
     }
     sys->image_loaded = false;
 }
@@ -147,12 +143,16 @@ uint8_t prodos_hdd_read_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t block
     if (sys->image_type == PRODOS_HDD_IMAGE_TYPE_MSC) {
         // USB flash drive
         uint8_t* buf = mem_writeptr(mem, buffer);
-        if (fseek(sys->file, block * PRODOS_HDD_BYTES_PER_BLOCK, SEEK_SET) != 0) {
-            printf("Error reading from file\r\n");
+        FRESULT res;
+        res = f_lseek(&sys->fil, block * PRODOS_HDD_BYTES_PER_BLOCK);
+        if (res != FR_OK) {
+            printf("Error %u reading from file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
-        if (fread(buf, 1, PRODOS_HDD_BYTES_PER_BLOCK, sys->file) != PRODOS_HDD_BYTES_PER_BLOCK) {
-            printf("Error reading from file\r\n");
+        UINT nread;
+        res = f_read(&sys->fil, buf, PRODOS_HDD_BYTES_PER_BLOCK, &nread);
+        if (res != FR_OK || nread != PRODOS_HDD_BYTES_PER_BLOCK) {
+            printf("Error %u reading from file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
     } else {
@@ -175,18 +175,22 @@ uint8_t prodos_hdd_write_block(prodos_hdd_t* sys, uint16_t buffer, uint32_t bloc
 
     if (sys->image_type == PRODOS_HDD_IMAGE_TYPE_MSC) {
         // USB flash drive
-        if (fseek(sys->file, block * PRODOS_HDD_BYTES_PER_BLOCK, SEEK_SET) != 0) {
-            printf("Error writing to file\r\n");
+        FRESULT res;
+        res = f_lseek(&sys->fil, block * PRODOS_HDD_BYTES_PER_BLOCK);
+        if (res != FR_OK) {
+            printf("Error %u writing to file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
-        if (fwrite(mem_readptr(mem, buffer), 1, PRODOS_HDD_BYTES_PER_BLOCK, sys->file) != PRODOS_HDD_BYTES_PER_BLOCK) {
-            printf("Error writing to file\r\n");
+        UINT nwritten;
+        res = f_write(&sys->fil, mem_readptr(mem, buffer), PRODOS_HDD_BYTES_PER_BLOCK, &nwritten);
+        if (res != FR_OK || nwritten != PRODOS_HDD_BYTES_PER_BLOCK) {
+            printf("Error %u writing to file\r\n", res);
             return PRODOS_HDD_ERR_IO;
         }
-        fflush(sys->file);
+        f_sync(&sys->fil);
     }
 
     return PRODOS_HDD_ERR_OK;
 }
 
-#endif  // CHIPS_IMPL
+#endif  // CHIPS_IMPL 

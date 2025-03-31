@@ -79,6 +79,32 @@ extern "C" {
 #define APPLE2_SCREEN_HEIGHT    192  // (192)
 #define APPLE2_FRAMEBUFFER_SIZE ((APPLE2_SCREEN_WIDTH / 2) * APPLE2_SCREEN_HEIGHT)
 
+#define PALETTE_BITS 4
+#define PALETTE_SIZE (1 << PALETTE_BITS)
+
+#define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
+
+// clang-format off
+static uint32_t __not_in_flash() apple2_palette[PALETTE_SIZE] = {
+    RGBA8(0x00, 0x00, 0x00), /* Black */
+    RGBA8(0xA7, 0x0B, 0x4C), /* Dark Red */
+    RGBA8(0x40, 0x1C, 0xF7), /* Dark Blue */
+    RGBA8(0xE6, 0x28, 0xFF), /* Purple */
+    RGBA8(0x00, 0x74, 0x40), /* Dark Green */
+    RGBA8(0x80, 0x80, 0x80), /* Dark Gray */
+    RGBA8(0x19, 0x90, 0xFF), /* Medium Blue */
+    RGBA8(0xBF, 0x9C, 0xFF), /* Light Blue */
+    RGBA8(0x40, 0x63, 0x00), /* Brown */
+    RGBA8(0xE6, 0x6F, 0x00), /* Orange */
+    RGBA8(0x80, 0x80, 0x80), /* Light Grey */
+    RGBA8(0xFF, 0x8B, 0xBF), /* Pink */
+    RGBA8(0x19, 0xD7, 0x00), /* Light Green */
+    RGBA8(0xBF, 0xE3, 0x08), /* Yellow */
+    RGBA8(0x58, 0xF4, 0xBF), /* Aquamarine */
+    RGBA8(0xFF, 0xFF, 0xFF)  /* White */
+};
+// clang-format on
+
 // Config parameters for apple2_init()
 typedef struct {
     bool fdc_enabled;         // Set to true to enable floppy disk controller emulation
@@ -198,8 +224,6 @@ static uint8_t __not_in_flash() _apple2_artifact_color_lut[1<<7] = {
 };
 // clang-format on
 
-extern bool msc_inquiry_complete;
-
 static inline uint32_t _apple2_rotl4b(uint32_t n, uint32_t count) { return (n >> (-count & 3)) & 0xF; }
 
 static uint16_t __not_in_flash() _apple2_double_7_bits_lut[128];
@@ -243,7 +267,7 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
     sys->debug = desc->debug;
     sys->audio_callback = desc->audio.callback;
 
-    CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x4000));
+    CHIPS_ASSERT(desc->roms.rom.ptr && (desc->roms.rom.size == 0x3000));
     CHIPS_ASSERT(desc->roms.character_rom.ptr && (desc->roms.character_rom.size == 0x800));
     CHIPS_ASSERT(desc->roms.fdc_rom.ptr && (desc->roms.fdc_rom.size == 0x100));
     CHIPS_ASSERT(desc->roms.hdc_rom.ptr && (desc->roms.hdc_rom.size == 0x100));
@@ -289,11 +313,7 @@ void apple2_init(apple2_t *sys, const apple2_desc_t *desc) {
             if (CHIPS_ARRAY_SIZE(apple2_po_images) > 0) {
                 prodos_hdd_insert_disk_internal(&sys->hdc.hdd[0], apple2_po_images[0], apple2_po_image_sizes[0]);
             }
-        } else {
-            while (!msc_inquiry_complete) {
-                sleep_us(16666);
-                tuh_task();
-            }
+        } else {    
             if (CHIPS_ARRAY_SIZE(apple2_msc_images) > 0) {
                 prodos_hdd_insert_disk_msc(&sys->hdc.hdd[0], apple2_msc_images[0]);
             }
@@ -568,7 +588,6 @@ void apple2_tick(apple2_t *sys) {
 uint32_t apple2_exec(apple2_t *sys, uint32_t micro_seconds) {
     CHIPS_ASSERT(sys && sys->valid);
     uint32_t num_ticks = clk_us_to_ticks(APPLE2_FREQUENCY, micro_seconds);
-    // uint32_t num_ticks = 50;
     if (0 == sys->debug.callback.func) {
         // run without debug callback
         for (uint32_t ticks = 0; ticks < num_ticks; ticks++) {
