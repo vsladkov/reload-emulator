@@ -79,6 +79,395 @@ static gamepad_t* find_gamepad(uint16_t id) {
     return NULL;
 }
 
+// Support for Xbox One controller (04284001)
+static uint8_t get_hat_state_04284001(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = report[2] & 0x0F;
+    
+    switch (dpad) {
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0xC:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x8:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x9:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        case 0x0:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+    
+    return hat_state;
+}
+
+static uint32_t get_button_state_04284001(uint8_t const* report) {
+    uint32_t button_state = 0;
+    
+    if (report[3] & 0x10) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[3] & 0x20) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[3] & 0x40) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[3] & 0x80) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[3] & 0x01) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[3] & 0x02) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+    
+    return button_state;
+}
+
+// Support for PS3 controller (05832060)
+static uint8_t get_hat_state_05832060(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = report[2] & 0x0F;
+    
+    switch (dpad) {
+        case 0x0:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0x5:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x7:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        case 0x8:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+    
+    return hat_state;
+}
+
+static uint32_t get_button_state_05832060(uint8_t const* report) {
+    uint32_t button_state = 0;
+    
+    if (report[3] & 0x40) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[3] & 0x20) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[3] & 0x10) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[3] & 0x80) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[3] & 0x08) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[3] & 0x04) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+    
+    return button_state;
+}
+
+// Support for PS4 controller (054C0CDA)
+static uint8_t get_hat_state_054C0CDA(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = report[5] & 0x0F;
+    
+    switch (dpad) {
+        case 0x0:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0x5:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x7:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+    
+    return hat_state;
+}
+
+static uint32_t get_button_state_054C0CDA(uint8_t const* report) {
+    uint32_t button_state = 0;
+    
+    if (report[5] & 0x10) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[5] & 0x20) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[5] & 0x40) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[5] & 0x80) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[6] & 0x01) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[6] & 0x02) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+    
+    return button_state;
+}
+
+static uint8_t get_hat_state_0079181C(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = report[2] & 0xF;
+
+    switch (dpad) {
+        case 0x0:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0x5:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x7:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+
+    return hat_state;
+}
+
+static uint32_t get_button_state_0079181C(uint8_t const* report) {
+    uint32_t button_state = 0;
+
+    if (report[0] & 0x01) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[0] & 0x02) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[0] & 0x08) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[0] & 0x10) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[0] & 0x40) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[0] & 0x80) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+
+    return button_state;
+}
+
+// Support for 8BitDo SN30 Pro controller (007918D2)
+static uint8_t get_hat_state_007918D2(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = report[2] & 0x0F;
+    
+    switch (dpad) {
+        case 0x0:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0x5:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x7:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        case 0x8:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+    
+    return hat_state;
+}
+
+static uint32_t get_button_state_007918D2(uint8_t const* report) {
+    uint32_t button_state = 0;
+    
+    if (report[0] & 0x01) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[0] & 0x02) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[0] & 0x08) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[0] & 0x10) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[0] & 0x40) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[0] & 0x80) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+    
+    return button_state;
+}
+
+// Support for Switch Pro controller (07382217)
+static uint8_t get_hat_state_07382217(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = (report[5] >> 4) & 0x0F;
+    
+    switch (dpad) {
+        case 0x0:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0x5:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x7:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        case 0x8:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+    
+    return hat_state;
+}
+
+static uint32_t get_button_state_07382217(uint8_t const* report) {
+    uint32_t button_state = 0;
+    
+    if (report[3] & 0x04) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[3] & 0x02) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[3] & 0x08) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[3] & 0x01) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[3] & 0x40) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[3] & 0x80) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+    
+    return button_state;
+}
+
 static uint8_t get_hat_state_081FE401(uint8_t const* report) {
     uint8_t hat_state = 0;
 
@@ -151,17 +540,144 @@ static uint32_t get_button_state_081FE401(uint8_t const* report) {
     return button_state;
 }
 
+// Support for Generic USB controller (1C59002X)
+static uint8_t get_hat_state_1C59002X(uint8_t const* report) {
+    uint8_t hat_state = 0;
+    uint8_t dpad = report[0] & 0x0F;
+    
+    switch (dpad) {
+        case 0x0:
+            hat_state = GAMEPAD_HAT_UP;
+            break;
+        case 0x1:
+            hat_state = GAMEPAD_HAT_UP_RIGHT;
+            break;
+        case 0x2:
+            hat_state = GAMEPAD_HAT_RIGHT;
+            break;
+        case 0x3:
+            hat_state = GAMEPAD_HAT_DOWN_RIGHT;
+            break;
+        case 0x4:
+            hat_state = GAMEPAD_HAT_DOWN;
+            break;
+        case 0x5:
+            hat_state = GAMEPAD_HAT_DOWN_LEFT;
+            break;
+        case 0x6:
+            hat_state = GAMEPAD_HAT_LEFT;
+            break;
+        case 0x7:
+            hat_state = GAMEPAD_HAT_UP_LEFT;
+            break;
+        case 0x8:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+        default:
+            hat_state = GAMEPAD_HAT_CENTERED;
+            break;
+    }
+    
+    return hat_state;
+}
+
+static uint32_t get_button_state_1C59002X(uint8_t const* report) {
+    uint32_t button_state = 0;
+    
+    if (report[1] & 0x01) {
+        button_state |= GAMEPAD_BUTTON_A;
+    }
+    if (report[1] & 0x02) {
+        button_state |= GAMEPAD_BUTTON_B;
+    }
+    if (report[1] & 0x04) {
+        button_state |= GAMEPAD_BUTTON_X;
+    }
+    if (report[1] & 0x08) {
+        button_state |= GAMEPAD_BUTTON_Y;
+    }
+    if (report[1] & 0x10) {
+        button_state |= GAMEPAD_BUTTON_TL;
+    }
+    if (report[1] & 0x20) {
+        button_state |= GAMEPAD_BUTTON_TR;
+    }
+    
+    return button_state;
+}
+
 static void process_gamepad_report(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len) {
     uint16_t id = dev_addr << 8 | instance;
     gamepad_t* gamepad = find_gamepad(id);
 
     switch (gamepad->type) {
+        case 0x04284001: // Xbox One controller
+            if (len != 11) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_04284001(report);
+            gamepad->button_state = get_button_state_04284001(report);
+            break;
+            
+        case 0x05832060: // PS3 controller
+            if (len != 8) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_05832060(report);
+            gamepad->button_state = get_button_state_05832060(report);
+            break;
+            
+        case 0x054C0CDA: // PS4 controller
+            if (len != 10) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_054C0CDA(report);
+            gamepad->button_state = get_button_state_054C0CDA(report);
+            break;
+            
+        case 0x0079181C:
+            if (len != 9) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_0079181C(report);
+            gamepad->button_state = get_button_state_0079181C(report);
+            break;
+            
+        case 0x007918D2: // 8BitDo SN30 Pro
+            if (len != 9) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_007918D2(report);
+            gamepad->button_state = get_button_state_007918D2(report);
+            break;
+            
+        case 0x07382217: // Switch Pro controller
+            if (len != 10) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_07382217(report);
+            gamepad->button_state = get_button_state_07382217(report);
+            break;
+            
         case 0x081FE401:
             if (len != 8) {
                 return;
             }
             gamepad->hat_state = get_hat_state_081FE401(report);
             gamepad->button_state = get_button_state_081FE401(report);
+            break;
+
+        case 0x1C590020: // Generic USB controller
+        case 0x1C590021:
+        case 0x1C590022:
+        case 0x1C590023:
+        case 0x1C590024:
+        case 0x1C590025:
+            if (len != 6) {
+                return;
+            }
+            gamepad->hat_state = get_hat_state_1C59002X(report);
+            gamepad->button_state = get_button_state_1C59002X(report);
             break;
 
         default:
