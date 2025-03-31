@@ -19,8 +19,11 @@
 //     distribution.
 
 #define CHIPS_IMPL
+
 #define __in_flash()
 #define __not_in_flash()
+
+#define RGBA8(b, g, r) (0xFF000000 | (r << 16) | (g << 8) | (b))
 
 #include <stdlib.h>
 

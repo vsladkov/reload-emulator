@@ -82,12 +82,6 @@ extern "C" {
 #define PALETTE_BITS 4
 #define PALETTE_SIZE (1 << PALETTE_BITS)
 
-#ifdef PICO_RP2040
-#define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
-#else
-#define RGBA8(b, g, r) (0xFF000000 | (r << 16) | (g << 8) | (b))
-#endif
-
 // clang-format off
 static uint32_t __not_in_flash() apple2_palette[PALETTE_SIZE] = {
     RGBA8(0x00, 0x00, 0x00), /* Black */

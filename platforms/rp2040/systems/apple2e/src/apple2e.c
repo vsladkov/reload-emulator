@@ -19,7 +19,10 @@
 //     distribution.
 
 #define CHIPS_IMPL
+
 #define MEM_PAGE_SHIFT (9U)
+
+#define RGBA8(r, g, b) (0xFF000000 | (r << 16) | (g << 8) | (b))
 
 #include <stdio.h>
 #include <stdlib.h>
