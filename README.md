@@ -19,7 +19,7 @@ Emulated systems:
   - 16 KB Overlay RAM installed
   - Disk II controller installed and 1 drive
 
-## Requirements
+## Requirements (rp2040)
 ### Tools
 - cmake
 - arm-none-eabi-gcc
