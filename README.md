@@ -29,12 +29,30 @@ Emulated systems:
 - PicoDVI
 - tinyusb
 
-## Quickstart 
+## Quickstart (rp2040)
 
 ```bash
 # Checkout pico-sdk & PicoDVI & tinyusb as git submodules
 cd platforms/rp2040/lib
 git submodule update --init -- pico-sdk PicoDVI tinyusb
+
+cd ..
+
+# Build
+mkdir build && cd build
+cmake ..
+make
+
+# Done
+find . -type f -name "*.uf2" -ls
+```
+
+## Quickstart (Mac OS, Linux and Windows)
+
+```bash
+# Checkout sokol as git submodule
+cd platforms/pc/lib
+git submodule update --init -- sokol
 
 cd ..
 
