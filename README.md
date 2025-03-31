@@ -62,7 +62,6 @@ cmake ..
 make
 
 # Done
-find . -type f -name "*.uf2" -ls
 ```
 
 ## Building firmware
