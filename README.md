@@ -33,7 +33,7 @@ Emulated systems:
 
 ```bash
 # Checkout pico-sdk & PicoDVI & tinyusb as git submodules
-cd platforms/pico-6502/lib
+cd platforms/rp2040/lib
 git submodule update --init -- pico-sdk PicoDVI tinyusb
 
 cd ..

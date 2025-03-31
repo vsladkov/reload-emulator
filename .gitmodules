@@ -1,12 +1,12 @@
 [submodule "platforms/pc/lib/sokol"]
 	path = platforms/pc/lib/sokol
 	url = https://github.com/vsladkov/sokol.git
-[submodule "platforms/pico-6502/lib/pico-sdk"]
-	path = platforms/pico-6502/lib/pico-sdk
+[submodule "platforms/rp2040/lib/pico-sdk"]
+	path = platforms/rp2040/lib/pico-sdk
 	url = https://github.com/vsladkov/pico-sdk.git
-[submodule "platforms/pico-6502/lib/PicoDVI"]
-	path = platforms/pico-6502/lib/PicoDVI
+[submodule "platforms/rp2040/lib/PicoDVI"]
+	path = platforms/rp2040/lib/PicoDVI
 	url = https://github.com/vsladkov/PicoDVI.git
-[submodule "platforms/pico-6502/lib/tinyusb"]
-	path = platforms/pico-6502/lib/tinyusb
+[submodule "platforms/rp2040/lib/tinyusb"]
+	path = platforms/rp2040/lib/tinyusb
 	url = https://github.com/vsladkov/tinyusb.git
