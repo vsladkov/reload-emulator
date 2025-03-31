@@ -1,4 +1,4 @@
-# Reload - Portable Retro Computers Emulator
+# Reload - Portable Cycle-Stepped Retro Computers Emulator
 
 Emulated systems:
 
@@ -73,7 +73,7 @@ You can use bin2hdr tool to generate firmware header files. Please, make sure MD
 
 
 ## Building games
-### UPDATE: Apple //e and Apple ][+ emulators now support USB flash drives with FAT and ExFAT file systems.
+### UPDATE (RP2040): Apple //e and Apple ][+ emulators now support USB flash drives with FAT and ExFAT file systems.
 
 Apple //e and Apple ][+ emulators are working with embedded ProDOS images and NIB images as C headers.
 
@@ -115,7 +115,7 @@ uint32_t apple2_po_image_sizes[] = {
 };
 
 char* apple2_msc_images[] = {
-    "Total Replay v5.0.hdv",
+    "Total Replay v5.2.hdv",
 };
 
 ```
