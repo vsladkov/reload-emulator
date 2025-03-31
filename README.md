@@ -1,4 +1,4 @@
-# Reload - Portable Cycle-Stepped Retro Computers Emulator
+# Reload - Portable Cycle-Stepped Emulator for Retro Computers
 
 Emulated systems:
 
