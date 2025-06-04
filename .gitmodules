@@ -1,3 +1,7 @@
+[submodule "platforms/pc/lib/imgui"]
+	path = platforms/pc/lib/imgui
+	url = https://github.com/veselin-sladkov/imgui.git
+	branch = docking
 [submodule "platforms/pc/lib/sokol"]
 	path = platforms/pc/lib/sokol
 	url = https://github.com/vsladkov/sokol.git
