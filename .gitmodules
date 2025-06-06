@@ -1,10 +1,13 @@
-[submodule "platforms/pc/lib/imgui"]
-	path = platforms/pc/lib/imgui
-	url = https://github.com/veselin-sladkov/imgui.git
-	branch = docking
 [submodule "platforms/pc/lib/sokol"]
 	path = platforms/pc/lib/sokol
 	url = https://github.com/vsladkov/sokol.git
+[submodule "platforms/pc/lib/imgui"]
+	path = platforms/pc/lib/imgui
+	url = https://github.com/vsladkov/imgui.git
+	branch = docking
+[submodule "platforms/pc/lib/ImGuiFileDialog"]
+	path = platforms/pc/lib/ImGuiFileDialog
+	url = https://github.com/vsladkov/ImGuiFileDialog.git
 [submodule "platforms/rp2040/lib/pico-sdk"]
 	path = platforms/rp2040/lib/pico-sdk
 	url = https://github.com/vsladkov/pico-sdk.git
